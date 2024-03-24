@@ -61,6 +61,10 @@ hp6 <- read_csv("hp6.csv")
 hp7 <- read_csv("hp7.csv")
 hp8 <- read_csv("hp8.csv")
 
+# Fix misspelling of movie#4
+hp4 <- hp4 |> 
+  mutate(movie = str_replace_all(string = movie, pattern = "Gobelt", replacement = "Goblet"))
+
 df <- rbind(hp1,hp2,hp3,hp4,hp5,hp6,hp7,hp8)
 ```
 
@@ -117,26 +121,13 @@ A continuación, vamos a dividir este análisis por películas, para observar co
 ```{r}
 top_characters <- c("Harry Potter", "Ron Weasley", "Hermione Granger", "Albus Dumbledore",  "Rubeus Hagrid", "Severus Snape", "Minerva McGonagall", "Voldemort","Neville Longbottom", "Draco Malfoy")
 
-movie_order <- tribble(~num, ~movie,
-  1 , "Harry Potter and the Philosopher's Stone",
-                 2, "Harry Potter and the Chamber of Secrets",
-                 3, "Harry Potter and the Prisoner of Azkaban",
-                 4, "Harry Potter and the Gobelt of Fire",
-                 5, "Harry Potter and the Order of the Phoenix",
-                 6, "Harry Potter and the Half-Blood Prince",
-                 7, "Harry Potter and the Deathly Hallows Part 1",
-                 8, "Harry Potter and the Deathly Hallows Part 2"
-                 )
 
-df <- df |> 
-  left_join(movie_order, by = "movie")
 
-Char_Dial <- data.frame(table(df$character, df$movie, df$num))
+Char_Dial <- data.frame(table(df$character, df$movie))
 Char_Dial %>%
-  mutate(Var3 = as.numeric(Var3)) |> 
   arrange(desc(Freq)) %>%
   filter(Var1 %in% top_characters) %>%
-  ggplot(., aes(reorder(Var1, +Freq), Freq, fill = Var2)) +
+  ggplot(aes(reorder(Var1, +Freq), Freq, fill = Var2)) +
   geom_bar(stat = "identity", width = 0.62)+
   scale_fill_uchicago()+
   coord_flip()+
@@ -467,18 +458,96 @@ Finalmente, al principio del análisis nos sorprendía las secuencias de dialogo
 
 # Sentiment analysis
 
+```{r movies-order}
+movie_order <- tribble(~num, ~movie, ~film.name,
+  1 , "Harry Potter and the Philosopher's Stone", "1-Philosopher's Stone",
+  2, "Harry Potter and the Chamber of Secrets", "2-Chamber of Secrets",
+  3, "Harry Potter and the Prisoner of Azkaban", "3-Prisoner of Azkaban",
+  4, "Harry Potter and the Goblet of Fire", "4-Goblet of Fire",
+  5, "Harry Potter and the Order of the Phoenix", "5-Order of the Phoenix",
+  6, "Harry Potter and the Half-Blood Prince", "6-Half-Blood Prince",
+  7, "Harry Potter and the Deathly Hallows Part 1", "7-Deathly Hallows Part 1",
+  8, "Harry Potter and the Deathly Hallows Part 2", "8-Deathly Hallows Part 2"
+  )
+
+df <- df |> 
+  left_join(movie_order, by = "movie")
+```
+
+
 ```{r setup-sentiment-data}
 
-Bing <- get_sentiments("bing")
+# Bing <- get_sentiments("bing")
+# Bing$sentiment <- first(Bing$sentiment)
 
-Bing$sentiment <- first(Bing$sentiment)
-
-Sentiment <- df %>%
+bing_sentiment <- df %>%
   unnest_tokens(output = word, input = dialog) %>%
-  left_join(Bing, "word") %>%
-  filter(!is.na(sentiment))
+  inner_join(get_sentiments("bing"), "word")
 
+affinn_sentiments <- df |>
+  unnest_tokens(output = word, input = dialog) %>%
+  inner_join(get_sentiments("afinn")) %>% 
+  mutate(linenumber = row_number(), .by = film.name)  %>% 
+  mutate(method = "AFINN")
 ```
+
+```{r plot-affinn-80}
+affinn_sentiments |> 
+  group_by(film.name,  index = linenumber %/% 80) %>% 
+  summarise(sentiment = sum(value)) |> 
+  ggplot(aes(index, sentiment, fill = sentiment)) +
+  geom_col(show.legend = FALSE) +
+  scale_fill_gradient2(high = "darkgreen", midpoint = 0,
+                       low = "red3")+
+  facet_wrap(~film.name , ncol = 2) +
+  theme_minimal() +
+  theme(
+    panel.grid.major.x = element_blank(),
+    panel.grid.minor = element_blank(),
+    axis.text = element_blank(), 
+    strip.text = element_text(face = "bold", hjust = 0),
+    panel.border = element_rect(fill = NA, color = "gray20")
+  )
+```
+
+```{r plot-affinn-20}
+affinn_sentiments |> 
+  group_by(film.name,  index = linenumber %/% 20) %>% 
+  summarise(sentiment = sum(value)) |> 
+  ggplot(aes(index, sentiment, fill = sentiment)) +
+  geom_col(show.legend = FALSE) +
+  scale_fill_gradient2(high = "darkgreen", midpoint = 0,
+                       low = "red3")+
+  facet_wrap(~film.name , ncol = 2) +
+  theme_minimal() +
+  theme(
+    panel.grid.major.x = element_blank(),
+    panel.grid.minor = element_blank(),
+    axis.text = element_blank(), 
+    strip.text = element_text(face = "bold", hjust = 0),
+    panel.border = element_rect(fill = NA, color = "gray20")
+  )
+```
+
+```{r plot-affinn-8}
+affinn_sentiments |> 
+  group_by(film.name,  index = linenumber %/% 8) %>% 
+  summarise(sentiment = sum(value)) |> 
+  ggplot(aes(index, sentiment, fill = sentiment)) +
+  geom_col(show.legend = FALSE) +
+  scale_fill_gradient2(high = "darkgreen", midpoint = 0,
+                       low = "red3")+
+  facet_wrap(~film.name , ncol = 2) +
+  theme_minimal() +
+  theme(
+    panel.grid.major.x = element_blank(),
+    panel.grid.minor = element_blank(),
+    axis.text = element_blank(), 
+    strip.text = element_text(face = "bold", hjust = 0),
+    panel.border = element_rect(fill = NA, color = "gray20")
+  )
+```
+
 
 
 ```{r bigram}
@@ -521,9 +590,7 @@ ggplot(., aes(reorder(word, +n), n))+
 ```
 
 ```{r}
-
-
-Sentiment %>% 
+bing_sentiment %>% 
   group_by(word, sentiment) %>%
   summarise(count = n()) |> 
   ungroup() %>%
@@ -541,7 +608,7 @@ Sentiment %>%
 ```
 
 ```{r}
-Sentiment %>% 
+bing_sentiment %>% 
   group_by(movie, sentiment) %>%
   summarise(count = n())%>%
   ungroup() |> 
@@ -558,7 +625,7 @@ Sentiment %>%
 ```
 
 ```{r}
-Sentiment %>% 
+bing_sentiment %>% 
   filter(character %in% c("Harry Potter", "Ron Weasley", "Hermione Granger", "Rubeus Hagrid", "Albus Dumbledore", "Remus Lupin", "Minerva McGonagall", "Draco Malfoy", "Severus Snape", "Lucius Malfoy", "Voldemort", "Tom Riddle", "Sirius Black", "Neville Longbottom"))  %>%
   group_by(character, sentiment) %>%
   summarise(count = n(), .groups = 'drop') %>%
