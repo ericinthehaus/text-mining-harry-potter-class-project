@@ -493,7 +493,7 @@ affinn_sentiments <- df |>
   mutate(method = "AFINN")
 ```
 
-```{r plot-affinn-80}
+```{r plot-affinn-100}
 affinn_sentiments |> 
   group_by(film.name,  index = linenumber %/% 100) %>% 
   summarise(sentiment = sum(value)) |> 
@@ -517,33 +517,12 @@ affinn_sentiments |>
   )
 ```
 
-When splitting up the text into 100-line chunks, you can see which movies have the most positive and negative sentiment. The 6th movie appears to be the most positive. One chunk in the middle of the movie has the highest rating of all. The most negative would be the end of the 8th movie, but the middle of the 2nd is close. The 7th movie 
+When splitting up the text into 100-line chunks, you can see which movies have the most positive and negative sentiment. The 6th movie appears to be the most positive. One chunk in the middle of the movie has the highest rating of all. The most negative would be the end of the 8th movie, but the middle of the 2nd is close. The 7th movie appears to be the most neutral. 
 
-```{r plot-affinn-20}
-affinn_sentiments |> 
-  group_by(film.name,  index = linenumber %/% 20) %>% 
-  summarise(sentiment = sum(value)) |> 
-  ggplot(aes(index, sentiment, fill = sentiment)) +
-  geom_col(show.legend = FALSE) +
-  scale_fill_gradient2(high = "darkgreen", midpoint = 0,
-                       low = "red3")+
-  facet_wrap(~film.name , ncol = 2) +
-  theme_minimal() +
-  theme(
-    panel.grid.major.x = element_blank(),
-    panel.grid.minor = element_blank(),
-    axis.text = element_blank(), 
-    strip.text = element_text(face = "bold", hjust = 0),
-    panel.border = element_rect(fill = NA, color = "gray20")
-  )+
-  labs(
-    x = "Each chunk split up by 20 lines"
-  )
-```
 
 ```{r plot-affinn-8}
 affinn_sentiments |> 
-  group_by(film.name,  index = linenumber %/% 8) %>% 
+  group_by(film.name,  index = linenumber %/% 12) %>% 
   summarise(sentiment = sum(value)) |> 
   ggplot(aes(index, sentiment, fill = sentiment)) +
   geom_col(show.legend = FALSE) +
@@ -559,9 +538,39 @@ affinn_sentiments |>
     panel.border = element_rect(fill = NA, color = "gray20")
   ) +
   labs(
-    x = "Each chunk split up by 8 lines"
+    x = "Each chunk split up by 12 lines",
+    subtitle = "AFFINN method"
   ) 
 ```
+
+Now, let's see about grouping it by chapter: 
+
+```{r plot-affinn-chapter}
+affinn_sentiments |> 
+  group_by(film.name, chapter) %>% 
+  summarise(sentiment = sum(value), index = min(linenumber)) |>
+  arrange(index) |> 
+  ggplot(aes(reorder(chapter, index), 
+             sentiment, fill = sentiment)) +
+  geom_col(show.legend = FALSE) +
+  scale_fill_gradient2(high = "darkgreen", midpoint = 0,
+                       low = "red3")+
+  facet_wrap(~film.name , ncol = 2, scales = "free_x") +
+  theme_minimal() +
+  theme(
+    panel.grid.major.x = element_blank(),
+    panel.grid.minor = element_blank(),
+    axis.text = element_blank(), 
+    strip.text = element_text(face = "bold", hjust = 0),
+    panel.border = element_rect(fill = NA, color = "gray20")
+  )+
+  labs(
+    x = "Each chunk split up by chapter",
+    subtitle  = "AFFINN method"
+  )
+```
+
+
 
 The three 
 
