@@ -450,6 +450,12 @@ movie_tf_idf %>%
         strip.text.x = element_text(size = 10, color = "navy"))
 ```
 
+Este análisis es bastante representativo y es de gran ayuda para identificar factores muy relevantes en la trama. Además, al pararnos a observar los resultados estos son bastantes fieles con la realidad, debido a que nosotros como fans podemos afirmar que en la mayoria de casos, las palabras que presentan un mayor tf-idf son muy importantes en la película. 
+
+Por ejemplo, en `Harry Potter and the Deathly Hallows Part 1` la palabra más distintiva es Dobby, este personaje, sin entrar en profundidad para no hacer spoiler, tiene una escena de las más importantes y conmomedoras de toda la saga en esta película. Por otro lado, si nos fijamos en la quinta entrega de la saga ( `Harry Potter and the Order of the Phoenix`), la palabra más distintiva es `prohesy` lo cual tiene sentido debido a que toda la película gira en torno a una profecia muy imporntante en la historia. Así como, en la tercera entrega `Harry Potter and the Prisoner of Azkaban` la palabra mas importante es `Pettigrew` y `dementos`, siendo ambas palabras bastante relevantes en esta película. Si la persona que lee esto es fan, estará de acuerdo con los resultados obtenidos. 
+
+Finalmente, al principio del análisis nos sorprendía las secuencias de dialogo que tenia `Horace Slughorn`, pues solo aparece en 3 de las 8 películas, pero al parecer este personaje es muy disntintivo en la sexta, siendo su nombre y apellido las palabras más importantes de toda la película. 
+
 
 
 
