@@ -462,19 +462,26 @@ Finalmente, al principio del análisis nos sorprendía las secuencias de dialogo
 
 
 
-
-
-
-
-
+##########
 
 
 # Sentiment analysis
-```{r}
+
+```{r setup-sentiment-data}
+
 Bing <- get_sentiments("bing")
 
 Bing$sentiment <- first(Bing$sentiment)
 
+Sentiment <- df %>%
+  unnest_tokens(output = word, input = dialog) %>%
+  left_join(Bing, "word") %>%
+  filter(!is.na(sentiment))
+
+```
+
+
+```{r bigram}
 df %>%
   unnest_tokens(output = word, input = dialog, token = "ngrams", n = 2) %>%
   filter(is.na(word)==F) %>%
@@ -485,13 +492,15 @@ df %>%
   count(word, sort = T) %>% 
   slice(1:15) %>%
 ggplot(., aes(reorder(word, +n), n))+
-  geom_bar(stat = "identity", width = 0.65, fill = "#a1d76a", alpha = 0.85)+
+  geom_bar(stat = "identity", width = 0.65, fill = "peru", alpha = 0.85)+
   coord_flip()+
   labs(title = "Most popular bigrams in the movies",
        subtitle = "Top 15",
        x = "Bigram content", y = "Frequency")+
   theme_minimal()
+```
 
+```{r trigram}
 df %>%
   unnest_tokens(output = word, input = dialog, token = "ngrams", n = 3) %>%
   filter(is.na(word)==F) %>%
@@ -512,43 +521,40 @@ ggplot(., aes(reorder(word, +n), n))+
 ```
 
 ```{r}
-Sentiment <- df %>%
-  unnest_tokens(output = word, input = dialog) %>%
-  left_join(Bing, "word") %>%
-  filter(is.na(sentiment)==F)
+
 
 Sentiment %>% 
   group_by(word, sentiment) %>%
-  summarise(count = n(), .groups = 'drop') %>%
+  summarise(count = n()) |> 
+  ungroup() %>%
   arrange(desc(count)) %>%
   slice(1:20) %>%
-ggplot(., aes(reorder(word, +count), count, fill = sentiment))+
-  geom_bar(stat = "identity", width = 0.62, alpha = 0.9)+
-  scale_fill_brewer(palette = "Set1")+
-  coord_flip()+
+  ggplot(., aes(y = reorder(word, count), x = count, fill = sentiment))+
+  geom_bar(stat = "identity", width = 0.62)+
+  scale_fill_brewer(palette = "Set1", type = "div") +
   labs(title = "Most popular words with assigned sentiment",
-       subtitle = "Top 20",
+       subtitle =  expression("Top 20 words"),
        x = "Word", y = "Frequency", fill = "Sentiment")+
   guides(fill = guide_legend(reverse = T))+
-  theme_minimal()+
-  theme(legend.title.align = 0.5, legend.position = "right", legend.direction = "vertical")
+  theme_minimal()+ 
+  theme(legend.position = "top")
 ```
 
 ```{r}
 Sentiment %>% 
   group_by(movie, sentiment) %>%
-  summarise(count = n(), .groups = 'drop') %>%
-ggplot(., aes(movie, count, fill = sentiment))+
+  summarise(count = n())%>%
+  ungroup() |> 
+   ggplot(aes(y = movie, x = count, fill = sentiment)) +
   geom_bar(stat = "identity", position = "fill", width = 0.7, alpha = 0.9)+
   scale_fill_brewer(palette = "Set1")+
-  scale_y_continuous(labels = scales::percent)+
-  coord_flip()+
+ #  scale_y_continuous(labels = scales::percent)+
   labs(title = "Share of words with positive and negative sentiment",
-       subtitle = "by part of a movie series", fill = "Sentiment",
-       x = "Part of a movie series", y = "Ratio")+
+       subtitle = "by movie", fill = "Sentiment",
+       x = "Percentage", y = "Ratio")+
   guides(fill = guide_legend(reverse = T))+
   theme_minimal()+
-  theme(legend.title.align = 0.5, legend.position = "right", legend.direction = "vertical")
+  theme(legend.position = "top")
 ```
 
 ```{r}
