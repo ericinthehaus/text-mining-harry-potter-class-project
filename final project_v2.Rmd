@@ -1,14 +1,18 @@
 ---
 title: "final project"
-output: html_document
+author: "Carlos and Eric"
 date: "2024-03-23"
+format: 
+  html: 
+    toc: true
+    toc-depth: 2
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE)
 ```
 
-## Libreries
+## Libraries
 
 Las librerias que vamos a usar para el trabajo son las siguientes:
 
@@ -487,19 +491,22 @@ bing_sentiment <- df %>%
   inner_join(get_sentiments("bing"), "word")
 
 affinn_sentiments <- df |>
+  mutate(linenumber = row_number(), .by = film.name)  %>% 
   unnest_tokens(output = word, input = dialog) %>%
   inner_join(get_sentiments("afinn")) %>% 
-  mutate(linenumber = row_number(), .by = film.name)  %>% 
   mutate(method = "AFINN")
 ```
 
-```{r plot-affinn-80}
+###  Sentiment by chunks of dialogue
+
+```{r plot-affinn-100}
 affinn_sentiments |> 
-  group_by(film.name,  index = linenumber %/% 80) %>% 
-  summarise(sentiment = sum(value)) |> 
+  group_by(film.name,  index = linenumber %/% 100) %>% # split movie dialogue into chunks of lines. 
+  summarise(sentiment = sum(value)) |> # sum up the sentiment 
   ggplot(aes(index, sentiment, fill = sentiment)) +
   geom_col(show.legend = FALSE) +
-  scale_fill_gradient2(high = "darkgreen", midpoint = 0,
+  scale_fill_gradient2(high = "darkgreen", 
+                       midpoint = 0,
                        low = "red3")+
   facet_wrap(~film.name , ncol = 2) +
   theme_minimal() +
@@ -509,17 +516,25 @@ affinn_sentiments |>
     axis.text = element_blank(), 
     strip.text = element_text(face = "bold", hjust = 0),
     panel.border = element_rect(fill = NA, color = "gray20")
+  ) +
+  labs(
+    x = "Each chunk split up by 100 lines",
+    subtitle = "AFFINN method"
   )
 ```
 
-```{r plot-affinn-20}
+When splitting up the dialogue into 100-line chunks, you can see which movies have the most positive and negative sentiment. The 6th movie appears to be the most positive. One chunk in the early middle part of the movie has the highest rating of all. The most negative chunk of dialogue is at the middle of the 2nd movie. The 7th movie appears to be neutral throughout and the 8th movie is mostly negative. The first two movies end very positively, unlike any of the others. 
+
+Now let's get more detailed.
+
+```{r plot-affinn-8}
 affinn_sentiments |> 
   group_by(film.name,  index = linenumber %/% 20) %>% 
   summarise(sentiment = sum(value)) |> 
   ggplot(aes(index, sentiment, fill = sentiment)) +
   geom_col(show.legend = FALSE) +
   scale_fill_gradient2(high = "darkgreen", midpoint = 0,
-                       low = "red3")+
+                       low = "red3") +
   facet_wrap(~film.name , ncol = 2) +
   theme_minimal() +
   theme(
@@ -528,18 +543,28 @@ affinn_sentiments |>
     axis.text = element_blank(), 
     strip.text = element_text(face = "bold", hjust = 0),
     panel.border = element_rect(fill = NA, color = "gray20")
-  )
+  ) +
+  labs(
+    x = "Each chunk split up by 20 lines",
+    subtitle = "AFFINN method"
+  ) 
 ```
 
-```{r plot-affinn-8}
+Now we can see more detailed changes in sentiment with 20-line chunks. The 6th movie is still positive, especially in the middle, but now we see a few negative dialogue between the positive ones. It is not *all* positive. We see that the 7th movie has both positive and negative dialogues but they cancel each other out when grouping into large chunks. The most positive sentiment happens at the end of the 1st movie. The 3rd movie starts very positive, as we can see from the 100-line chunks, but now we see that there are some really negative dialogues in the second half of the movie. The most negative dialogues appear to be in the 3rd film.  
+
+Now, let's see about grouping it by chapter: 
+
+```{r plot-affinn-chapter}
 affinn_sentiments |> 
-  group_by(film.name,  index = linenumber %/% 8) %>% 
-  summarise(sentiment = sum(value)) |> 
-  ggplot(aes(index, sentiment, fill = sentiment)) +
+  group_by(film.name, chapter) %>% # group by chapter 
+  summarise(sentiment = sum(value), index = min(linenumber)) |>
+  arrange(index) |> 
+  ggplot(aes(reorder(chapter, index), 
+             sentiment, fill = sentiment)) +
   geom_col(show.legend = FALSE) +
   scale_fill_gradient2(high = "darkgreen", midpoint = 0,
                        low = "red3")+
-  facet_wrap(~film.name , ncol = 2) +
+  facet_wrap(~film.name , ncol = 2, scales = "free_x") +
   theme_minimal() +
   theme(
     panel.grid.major.x = element_blank(),
@@ -547,10 +572,16 @@ affinn_sentiments |>
     axis.text = element_blank(), 
     strip.text = element_text(face = "bold", hjust = 0),
     panel.border = element_rect(fill = NA, color = "gray20")
+  )+
+  labs(
+    x = "Each chunk split up by chapter",
+    subtitle  = "AFFINN method"
   )
 ```
 
+Most positive chapter in 6th movie, but close is in the 3rd. Most nagative chapter is in the 2nd. Now we can see one very positive chapter towards the end of teh 8th movie. We also see that the negative detailed chunks in the middle of the 6th movie is gone. All the chapters in the middle 
 
+The three 
 
 ```{r bigram}
 df %>%
