@@ -249,10 +249,6 @@ Spels_df |>
         legend.text = element_text(size = 10)) # Ajustes de legibilidad y estética
 ```
 
-```{r}
-
-```
-
 
 Una vez visto como se distribuyen los hechizos por película, otra opcion de visualizarlo es dividirlo en funcion de quien son los personajes que lo conjuran. Vayamos a ello:
 
@@ -334,6 +330,11 @@ Observando los resultados y comparandolo con la duracion de las películas, pode
 Parece que no hay tanta relacion entre la cantidad de dialogos y el numero de minutos en la película. Hagamos lo mismo, pero en lugar de dialogos por palabras.
 
 ```{r}
+#we obtain the text from the library
+words <- df %>%
+  unnest_tokens(word, dialog) %>%
+  count(movie, word, sort = TRUE)
+
 movie_words <-  df %>%
   # we tokenize as usual (as an exception we won't be filtering stopwords now)
   unnest_tokens(word, dialog) %>%
@@ -345,20 +346,109 @@ movie_words
 ggplot(movie_words, aes(x = reorder(movie, -total_words), y = total_words, fill = movie)) +
   geom_bar(stat = "identity") +
   coord_flip() + # Barras horizontales
-  labs(title = "Total Dialogs by Harry Potter Movie",
+  labs(title = "Total Words by Harry Potter Movie",
        x = "Movie",
-       y = "Total Dialogs") +
+       y = "Total Words") +
   theme_minimal() +
   theme(legend.position = "none")
 
 ```
+Nuevamente, vemos que aunque tenga una mayor relacion el numero de palabras con la duracion de la película, esta no coincide, por lo que podemos descartar la hipotesis de que a mayor dialogo, mayor es la duracion de la pelicula.
+
+Una vez hemos comprobado esto, el siguiente paso que haremos sera observar el term frecuency de cada palabra, para observar cuales son las palabras más representativas de cada película.  Esta se calcula como el numero de veces que la palabra se repite en en la película dividido por el numero de palabras totales que hay en toda la pelicula. 
+
+```{r}
+movie_words <- words %>%
+ left_join(movie_words, by = "movie") |> 
+  #we add a column for term_frequency in each novel
+  mutate(term_frequency = n/total_words)
+movie_words
+
+ggplot(movie_words, aes(x = term_frequency)) +
+  geom_histogram(binwidth = 0.0001, fill = "#0073C2FF", color = "black") +
+  xlim(NA, 0.009) + # Límites en el eje x para enfocar hasta 0.01
+  scale_y_continuous(breaks = seq(0, 7000, by = 500)) + # Ajusta los breaks del eje y
+  labs(title = "Distribution of Term Frequency Across All Movies",
+       x = "Term Frequency (as a percentage of total words)",
+       y = "Count") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
 
 
 
+```
+Este gráfico es un histograma que muestra la distribución de la frecuencia de términos en diálogos a lo largo de todas las películas de Harry Potter. Cada barra representa la cantidad de términos (eje y) que ocurren con cierta frecuencia (eje x) dentro del conjunto total de palabras de las películas. Se puede observar que hay un gran numero de palabras con baja frecuencia, lo que sugiere que hay una gran cantidad de palabras que no se repiten. 
 
+Ahora vamos a observar una distrbucion de frecuencia pero por película, observando que pelicula es mas rica en vocabulario. 
 
+```{r}
+ggplot(movie_words, aes(x = term_frequency, fill = movie)) +
+  geom_histogram(bins = 30, position = "identity") + # Eliminamos la transparencia con alpha
+  scale_x_continuous(limits = c(NA, 0.0009), labels = scales::percent_format(accuracy = 0.01)) +
+  scale_fill_manual(values = c("Harry Potter and the Chamber of Secrets" = "#1f77b4",
+                                "Harry Potter and the Deathly Hallows Part 1" = "#ff7f0e",
+                                "Harry Potter and the Deathly Hallows Part 2" = "#2ca02c",
+                                "Harry Potter and the Goblet of Fire" = "#d62728",
+                                "Harry Potter and the Half-Blood Prince" = "#9467bd",
+                                "Harry Potter and the Order of the Phoenix" = "#8c564b",
+                                "Harry Potter and the Philosopher's Stone" = "#e377c2",
+                                "Harry Potter and the Prisoner of Azkaban" = "#7f7f7f")) + # Añade más colores según sea necesario
+  labs(title = "Distribution of Term Frequency Across Movies",
+       x = "Term Frequency (as a percentage of total words)",
+       y = "Count") +
+  theme_minimal() +
+  theme(legend.position = "right", legend.title = element_blank())
+```
+Podemos observar que la pelicula más rica en vocabulario es `Harry Potter and the Half-Blood Prince`. No obstante no se observa con claridad la distribucion de las diferentes películas. 
 
+```{r,  fig.width=15, fig.asp=0.65, out.width='100%', preview = TRUE}
+# Vizualization
+ggplot(movie_words, aes(x = term_frequency, fill = movie)) +
+  geom_histogram(binwidth = 0.0001, color = "white") + 
+  scale_x_continuous(limits = c(NA, 0.003), labels = scales::percent_format(accuracy = 0.0001)) + 
+  facet_wrap(~ movie, ncol = 2, scales = "free_y") + 
+  scale_fill_brewer(palette = "Set3") + 
+  labs(title = "Term Frequency Distribution by Movie",
+       x = "Term Frequency",
+       y = "Count") +
+  theme_light() + # Aplicamos un tema claro
+  theme(legend.position = "bottom", 
+        axis.text.x = element_text(angle = 45, hjust = 1), 
+        strip.background = element_rect(fill = "lightblue"), 
+        strip.text.x = element_text(size = 8, color = "navy"))
+```
 
+En general podemos observar que todas las películas presentan la misma dsitribucion. 
+
+### TF-IDF
+
+El siguiente paso en nuestro análisis es utilizar la técnica de frecuencia de término-frecuencia inversa de documento (tf-idf) para resaltar palabras que son distintivas en cada película de la serie de Harry Potter. Tf-idf es útil porque nos ayuda a identificar no solo las palabras más frecuentes, sino también las que son especialmente significativas en un documento determinado en relación con una colección de documentos. Esto nos permite ver más allá de la mera frecuencia y considerar la relevancia de un término, dándonos una visión más matizada de cómo se utiliza el lenguaje en las diferentes películas.
+
+Al calcular el tf-idf de cada término en el contexto de cada película, podemos filtrar y visualizar las 20 palabras más caracterizadoras por película, lo que nos da una lista de términos distintivos que definen o son emblemáticos de cada una.
+
+```{r,  fig.width=15, fig.asp=0.65, out.width='100%', preview = TRUE}
+#we create a new variable with the analysis
+movie_tf_idf <- movie_words %>%
+  bind_tf_idf(word, movie, n) |> 
+  select(-total_words) %>%
+  #we arrange by tf-idf in descending order
+  arrange(desc(tf_idf))
+
+# Vizualization
+movie_tf_idf %>%
+  group_by(movie) %>%
+  slice_max(tf_idf, n = 20) %>%
+  ungroup() %>%
+  ggplot(aes(tf_idf, fct_reorder(word, tf_idf), fill = movie)) +
+  geom_col(show.legend = FALSE) +
+  facet_wrap(~ movie, ncol = 2, scales = "free") +
+  scale_fill_brewer(palette = "Set2") + 
+  labs(x = "TF-IDF", y = "Words") + 
+  theme_minimal() + 
+  theme(axis.text.y = element_text(angle = 0), 
+        strip.background = element_rect(fill = "lightblue"), 
+        strip.text.x = element_text(size = 10, color = "navy"))
+```
 
 
 
