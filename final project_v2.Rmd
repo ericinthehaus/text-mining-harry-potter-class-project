@@ -495,11 +495,12 @@ affinn_sentiments <- df |>
 
 ```{r plot-affinn-80}
 affinn_sentiments |> 
-  group_by(film.name,  index = linenumber %/% 80) %>% 
+  group_by(film.name,  index = linenumber %/% 100) %>% 
   summarise(sentiment = sum(value)) |> 
   ggplot(aes(index, sentiment, fill = sentiment)) +
   geom_col(show.legend = FALSE) +
-  scale_fill_gradient2(high = "darkgreen", midpoint = 0,
+  scale_fill_gradient2(high = "darkgreen", 
+                       midpoint = 0,
                        low = "red3")+
   facet_wrap(~film.name , ncol = 2) +
   theme_minimal() +
@@ -509,8 +510,14 @@ affinn_sentiments |>
     axis.text = element_blank(), 
     strip.text = element_text(face = "bold", hjust = 0),
     panel.border = element_rect(fill = NA, color = "gray20")
+  ) +
+  labs(
+    x = "Each chunk split up by 100 lines",
+    subtitle = "AFFINN method"
   )
 ```
+
+When splitting up the text into 100-line chunks, you can see which movies have the most positive and negative sentiment. The 6th movie appears to be the most positive. One chunk in the middle of the movie has the highest rating of all. The most negative would be the end of the 8th movie, but the middle of the 2nd is close. The 7th movie 
 
 ```{r plot-affinn-20}
 affinn_sentiments |> 
@@ -528,6 +535,9 @@ affinn_sentiments |>
     axis.text = element_blank(), 
     strip.text = element_text(face = "bold", hjust = 0),
     panel.border = element_rect(fill = NA, color = "gray20")
+  )+
+  labs(
+    x = "Each chunk split up by 20 lines"
   )
 ```
 
@@ -547,10 +557,13 @@ affinn_sentiments |>
     axis.text = element_blank(), 
     strip.text = element_text(face = "bold", hjust = 0),
     panel.border = element_rect(fill = NA, color = "gray20")
-  )
+  ) +
+  labs(
+    x = "Each chunk split up by 8 lines"
+  ) 
 ```
 
-
+The three 
 
 ```{r bigram}
 df %>%
