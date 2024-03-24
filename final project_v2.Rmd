@@ -1,0 +1,481 @@
+---
+title: "final project"
+output: html_document
+date: "2024-03-23"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Libreries
+
+Las librerias que vamos a usar para el trabajo son las siguientes:
+
+```{r}
+library(tidyverse)
+library(dplyr)
+library(magrittr)
+library(scales)
+library(RColorBrewer)
+library(ggsci)
+library(ggthemes)
+library(lubridate)
+library(viridis)
+library(ggrepel)
+library(reshape)
+library(gridExtra)
+library(tidyverse)
+library(reshape)
+library(viridis)
+library(tm)
+library(SnowballC)
+library(wordcloud)
+library(NLP)
+library(reshape)
+library(widyr)
+library(wordcloud2)
+library(tidytext)
+library(janeaustenr)
+library(htmlwidgets)
+```
+
+## Introduction
+
+En este Trabajo aplicaremos diferentes técnicas de Text Mining utilizando los diferentes guiones de las películas de Harry Potter para revelar diferentes patrones y tendencias en la narrativa, los personajes y las emociones que pudieron experimentar. Mediante el procesamiento de lenguaje natural, buscaremos insights sobre la evolución de la trama y el desarrollo emocional a lo largo de la saga, proporcionando insights únicos sobre uno de los universos más emblemáticos de la literatura y el cine.
+
+Antes de continuar, queremos avisar que este trabajo está hecho por grandes fans de la saga, por lo que lo haremos con gran cariño y pedimos perdon de antemano si nos pasamos de fans. También es necesario avaisr que puede que hagamos algun spoiler pero prometemos que serán pequeños (no relacionados con la trama). Por eso, recomendamos que para los que nos lean, se vean las películas antes, o mejor aún, leeros los libros. Nos lo agradeceréis cuando los acabéis.
+
+## Databases
+
+La base de datos que utilizaremos en este proyecto se ha recopilado de GitHub y está accesible directamente a través del siguiente enlace: [GitHub - HP Dataset](https://github.com/Kornflex28/hp-dataset/tree/main/datasets).
+
+```{r}
+
+hp1 <- read_csv("hp1.csv")
+hp2 <- read_csv("hp2.csv")
+hp3 <- read_csv("hp3.csv")
+hp4 <- read_csv("hp4.csv")
+hp5 <- read_csv("hp5.csv")
+hp6 <- read_csv("hp6.csv")
+hp7 <- read_csv("hp7.csv")
+hp8 <- read_csv("hp8.csv")
+
+df <- rbind(hp1,hp2,hp3,hp4,hp5,hp6,hp7,hp8)
+```
+
+## Initial Hypothesis
+
+-   Quienes son los personajes que mas han calado en la cultura popular
+
+## TF-IDF
+
+### Most sentences in movies
+
+Una de las herramientas más útiles en Text Mining es el conteo de palabras en cada texto para determinar lo relevante que puede ser cierto vocabulario o tema dentro de un corpus. Este enfoque nos permite identificar términos clave, frecuencias y patrones que emergen en el discurso, ofreciendo una ventana hacia los temas predominantes y la importancia relativa de diferentes conceptos a lo largo de la narrativa.
+
+No obstante, el conteo también es útil para identificar quienes son los personajes principales en las diferentes novelas o en esta caso, películas. Considerando que aquellas personas que muestren un numero más alto de lineas de guion en una pelicula deberían ser los protagonistas.
+
+Eso va a ser el primer pasoque hagamos en nuestro trabajo, identificar los protagonistas de las diferentes peliculas. Por suerte, somos grandes fans de la saga y vamos a poder comprobar los resultados de manera bastante sencilla, pero podríamos hacerlo con cualquier guión para saber su importancia.
+
+```{r}
+# Save df as a dataframe with variables 'character' and 'movie'
+Char_Dial <- data.frame(table(df$character, df$movie))
+
+# Sum lines for each character throughout all movies
+Char_Dial_Sum <- Char_Dial %>%
+  group_by(Var1) %>%
+  summarise(Total_Freq = sum(Freq)) %>%
+  ungroup()
+
+# Select top 10 characters with the most spoken lines
+Char_Dial_Top10 <- Char_Dial_Sum %>%
+  arrange(desc(Total_Freq)) %>%
+  slice_max(Total_Freq, n = 10)
+
+# Create a graph for the top 10 characters with the most lines
+ggplot(Char_Dial_Top10, aes(x = reorder(Var1, Total_Freq), y = Total_Freq)) +
+  geom_bar(stat = "identity", width = 0.62, fill = "steelblue") +
+  coord_flip() +
+  labs(title = "Characters with the most sentences",
+       subtitle = "Top 10 across all parts of a movie series",
+       x = "Character", y = "Number of sentences") +
+  theme_minimal() +
+  theme(legend.position = "none")  # Remove legend because it is not relevant
+
+
+```
+
+En este gráfico podemos observar quienes son los 10 personajes más protagonistas en la saga de Harry Potter.
+
+Como era de esperar, el personaje que más frases tiene en las peliculas es aquel que aparece en el título de las películas y es el que conocen como `El elegido`o Harry Potter, para los que no son tan fans. Seguido de Harry vienen sus mejores amigos, `Ron Weasly` y `Hermione Granger`, completando así, el`Trío de Oro`
+
+No obstante, al revisar los resultados y como fans de la saga nos llama la atencion la aparición de un personaje en concreto `Horace Slughorn` este personaje aparece en la sexta entrega teniendo gran protagonismo solo en esta, siendo más olvidado en la ultimas dos. Además, en esta lista hay grandes olvidados como puede ser el caso de `Draco Malfoy` que a pesar de haber sido un personaje muy importante en la saga, siendo unos principales enemigos de Harry Potter, no se encuentra en el top 10. Esto peude ser un llamamiento del gran impacto que tuvo este personaje en la cultura popular, pues toda persona que haya visto las películas o leido los libros, se acuerda de este personaje, pero en cambio apenas aparece en pantalla, según los resultados obtenidos.
+
+A continuación, vamos a dividir este análisis por películas, para observar como se reparten las frases en toda la saga. Para ello vamos guardar en el siguiente vector los nombres de mencionados personajes, con la licencia de cambiar a `Horace Slughorn` por `Draco Malfoy`.
+
+```{r}
+top_characters <- c("Harry Potter", "Ron Weasley", "Hermione Granger", "Albus Dumbledore",  "Rubeus Hagrid", "Severus Snape", "Minerva McGonagall", "Voldemort","Neville Longbottom", "Draco Malfoy")
+
+movie_order <- tribble(~num, ~movie,
+  1 , "Harry Potter and the Philosopher's Stone",
+                 2, "Harry Potter and the Chamber of Secrets",
+                 3, "Harry Potter and the Prisoner of Azkaban",
+                 4, "Harry Potter and the Gobelt of Fire",
+                 5, "Harry Potter and the Order of the Phoenix",
+                 6, "Harry Potter and the Half-Blood Prince",
+                 7, "Harry Potter and the Deathly Hallows Part 1",
+                 8, "Harry Potter and the Deathly Hallows Part 2"
+                 )
+
+df <- df |> 
+  left_join(movie_order, by = "movie")
+
+Char_Dial <- data.frame(table(df$character, df$movie, df$num))
+Char_Dial %>%
+  mutate(Var3 = as.numeric(Var3)) |> 
+  arrange(desc(Freq)) %>%
+  filter(Var1 %in% top_characters) %>%
+  ggplot(., aes(reorder(Var1, +Freq), Freq, fill = Var2)) +
+  geom_bar(stat = "identity", width = 0.62)+
+  scale_fill_uchicago()+
+  coord_flip()+
+  guides(fill = guide_legend(title.position = "top", reverse = T))+
+  labs(title = "Characters with the most sentences",
+       subtitle = "Top 10, by movie", fill = "Movie",
+       x = "Character", y = "Number of sentences")+
+  theme_minimal()+
+  theme(legend.title.align = 0.5, legend.position = "right", legend.direction = "vertical") 
+
+```
+
+### Most used Spells
+
+En este apartado, vamos a hablar de magia, más concretamente de hechizos. En el mundo de Harry Potter, para poder hacer magiaa, tienes que conjurar un hechizo de una manera determinada. Es por ello, que vamos a ver cuales son los hechizos más usados dentro de la saga.
+
+Para ello, en primer lugar, vamos a guardar en un vector todos los hechizos que se mencionan en las películas. Para ver de donde hemos cogido los hechizos pincha [here](https://screenrant.com/harry-potter-spells-list-from-movies-and-books/).
+
+```{r}
+spells <- c('Accio', 'Alohomora', 'Avada Kedavra', 'Crucio', 'Expecto Patronum', 'Expelliarmus', 'Imperio',
+ 'Lumos', 'Obliviate', 'Petrificus Totalus', 'Reparo', 'Riddikulus', 'Sectumsempra', 'Wingardium Leviosa')
+
+# Agregamos una columna para identificar el hechizo mencionado en cada diálogo
+df$spell <- NA  # Initialize the variable with `NA`
+
+for(spell in spells) {
+  df$spell <- ifelse(grepl(spell, df$dialog, ignore.case = TRUE), spell, df$spell)
+}
+
+# Calculamos el conteo de cada hechizo
+spell_counts <- df %>%
+  filter(!is.na(spell)) %>% # Exclude lines without spells
+  count(spell, sort = TRUE) # Count occurances for each spell and sort in order
+
+library(viridis) # Make sure to have this package installed
+
+# Asumiendo que 'spell_counts' ya está creado y contiene los datos de frecuencia de hechizos
+ggplot(spell_counts, aes(x = reorder(spell, n), y = n, fill = spell)) +
+  geom_bar(stat = "identity") +
+  geom_text(aes(label = n), position = position_dodge(width = 0.9), hjust = -0.1, size = 3.5) + # Etiquetas de frecuencia
+  coord_flip() +
+  scale_fill_viridis(discrete = TRUE, option = "D") + # Use a color palette for discrete data 
+  labs(title = 'Spells most commonly used',
+       subtitle = "Frequency of mentioning spells in dialogues",
+       x = 'Spells',
+       y = 'Frequency') +
+  theme_minimal() +
+  theme(legend.title = element_blank(), # O considera eliminar la leyenda si es redundante
+        axis.title.x = element_text(size = 12, face = "bold"),
+        axis.title.y = element_text(size = 12, face = "bold"),
+        plot.title = element_text(size = 14, face = "bold"),
+        plot.subtitle = element_text(size = 10),
+        legend.position = "none") # O ajusta la posición de la leyenda si prefieres mantenerla
+```
+
+Los hechizos más usados son `Expeliarmus` y `Expecto Patronum` con un total de 12 veces repartidas por las 8 películas. Pero vamos a ver como se distribuyen por película.
+
+The most used spells are `Expeliarmus` and `Expecto Patronum` with a total of 12 times throughout all 8 movies. But let's see how they are distributed across the series. 
+
+```{r}
+Spels_df <- data.frame(table(df$character, df$movie, df$spell))
+
+Spels_df %>%
+  arrange(desc(Freq)) %>%
+  filter(Var3 %in% spells) %>%
+  ggplot(aes(reorder(Var3, +Freq), Freq, fill = Var2)) +
+  geom_bar(stat = "identity", width = 0.62) +
+  scale_fill_brewer(palette = "Set2") + # Paleta de colores "Set3" para datos categóricos
+  coord_flip() +
+  guides(fill = guide_legend(title.position = "top", title = "Movie Part")) +
+  labs(title = "Spells most commonly used",
+       subtitle = "Frequency of mentioning spells by movie",
+       x = "Spells",
+       y = "Number of appareances") +
+  theme_minimal() +
+  theme(legend.title.align = 0.5, 
+        legend.position = "right", 
+        legend.direction = "vertical",
+        plot.title = element_text(size = 14, face = "bold"),
+        plot.subtitle = element_text(size = 12),
+        axis.title.x = element_text(size = 12),
+        axis.title.y = element_text(size = 12),
+        legend.text = element_text(size = 10)) # Ajustes de legibilidad y estética
+
+```
+
+```{r}
+Spels_df |> 
+  filter(Freq > 0) |> 
+  select(Var2, Var3) |> 
+  distinct() |> 
+  count( Var3) |> 
+  ggplot(aes(reorder(Var3, +n), n, fill = n)) +
+  geom_bar(stat = "identity", width = 0.62) +
+  #scale_fill_manual(values = c("peru", "gray90")) + # Paleta de colores "Set3" para datos categóricos
+  coord_flip() +
+  guides(fill = guide_legend(title.position = "top", title = "Movie Part")) +
+  labs(title = "Riddikulus is in only one movie",
+       subtitle = "Number of movie mentioning spells",
+       x = "Spells",
+       y = "Number of appareances") +
+  theme_minimal() +
+  theme(legend.title.align = 0.5, 
+        legend.position = "right", 
+        legend.direction = "vertical",
+        plot.title = element_text(size = 14, face = "bold"),
+        plot.subtitle = element_text(size = 12),
+        axis.title.x = element_text(size = 12),
+        axis.title.y = element_text(size = 12),
+        legend.text = element_text(size = 10)) # Ajustes de legibilidad y estética
+```
+
+```{r}
+
+```
+
+
+Una vez visto como se distribuyen los hechizos por película, otra opcion de visualizarlo es dividirlo en funcion de quien son los personajes que lo conjuran. Vayamos a ello:
+
+```{r,  fig.width=15, fig.asp=0.65, out.width='100%', preview = TRUE}
+
+spell_character_counts <- df %>%
+  filter(spell %in% spells) %>% # Asumiendo 'spells' contiene los nombres de hechizos de interés
+  count(spell, character) %>%
+  arrange(spell, desc(n))
+
+# Creando el gráfico
+ggplot(spell_character_counts, aes(x = reorder(character, n), y = n, fill = character)) +
+  geom_bar(stat = "identity") +
+  facet_wrap(~ spell, scales = "free_y") + # Usa facetas para cada hechizo con escalas libres en y
+  coord_flip() + # Barras horizontales
+  scale_fill_viridis_d(begin = 0.2, end = 0.8, direction = -1, option = "C") + # Paleta de colores
+  labs(title = "Character Spell Usage",
+       x = "Character",
+       y = "Frequency of Spell Usage") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1),
+        strip.text.x = element_text(face = "bold"),
+        legend.position = "none") # Mejora de legibilidad y estética
+```
+
+Aquí podemos observar la distribución de los diferentes hechizos conjurados por los diferentes personajes. Podemos observar como en la mayoria predominan o `Harry Potter` o `Hermione Granger`. Lo cual sirve de gran indicador de la relevancia de estos personajes, así como, tambien muestra quienes son otros personajes influyentes en la trama.
+
+En este punto, ya hemos averiguado cuales son los hechizos que más usan y los personajes que más hablan. El siguiente paso consistirá en observar cuales son las palabras que mas se repiten y calcular su frecuencia.
+
+### Most used Words
+
+El primer paso, es comprobar cual es la película que más guión tiene o más larga. Es decir, asimiremos que las peliculas que tienen mayor cantidad de dialogos, son aquellas que nos ofrecen una mayor cantidad de minutos en la gran pantalla.
+
+```{r}
+library(dplyr)
+
+total_dialogs <- df %>%
+  group_by(movie) %>%
+  summarize(total_dialogs = n())  # Cuenta el número de filas por grupo, lo que equivale a contar diálogos
+
+total_dialogs
+
+```
+
+Vamos a representarlo en un grafico.
+
+```{r}
+
+# Asumiendo que total_dialogs ya contiene los datos necesarios
+ggplot(total_dialogs, aes(x = reorder(movie, -total_dialogs), y = total_dialogs, fill = movie)) +
+  geom_bar(stat = "identity") +
+  coord_flip() + # Barras horizontales
+  labs(title = "Total Dialogs by Harry Potter Movie",
+       x = "Movie",
+       y = "Total Dialogs") +
+  theme_minimal() +
+  theme(legend.position = "none") # No necesitamos leyenda ya que los nombres de las películas están en el eje x
+
+```
+
+Observando los resultados y comparandolo con la duracion de las películas, podemos observar que no coincide, es decir, la pelicula que tiene más dialogos es `Harry Potter and the Order of the Phoenix`, siendo la segunda película más corta de la saga. La información sobre la duración de las películas es la siguiente, aunque puedes encontrar más información sobre ello, en el siguiente [link](https://www.pottertalk.net/harry-potter-movie-lengths/).
+
+-   Sorcerer’s Stone = 152 minutes = 2 hours 32 minutes
+
+-   Chamber of Secrets = 161 minutes = 2 hours 41 minutes
+
+-   Prisoner of Azkaban = 142 minutes = 2 hours 22 minutes
+
+-    Goblet of Fire = 157 minutes = 2 hours 37 minutes
+
+-    Order of the Phoenix = 139 minutes = 2 hours 18 minutes
+
+-   Half Blood Prince = 153 minutes = 2 hours 33 minutes
+
+-    Deathly Hallows pt 1 = 146 minutes = 2 hours 26 minutes
+
+-   Deathly Hallows pt 2 = 130 minutes = 2 hours 10 minutes
+
+Parece que no hay tanta relacion entre la cantidad de dialogos y el numero de minutos en la película. Hagamos lo mismo, pero en lugar de dialogos por palabras.
+
+```{r}
+movie_words <-  df %>%
+  # we tokenize as usual (as an exception we won't be filtering stopwords now)
+  unnest_tokens(word, dialog) %>%
+  count(movie, word, sort = TRUE) |> 
+   group_by(movie) %>% 
+  summarize(total_words = sum(n))
+movie_words
+
+ggplot(movie_words, aes(x = reorder(movie, -total_words), y = total_words, fill = movie)) +
+  geom_bar(stat = "identity") +
+  coord_flip() + # Barras horizontales
+  labs(title = "Total Dialogs by Harry Potter Movie",
+       x = "Movie",
+       y = "Total Dialogs") +
+  theme_minimal() +
+  theme(legend.position = "none")
+
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# Sentiment analysis
+```{r}
+Bing <- get_sentiments("bing")
+
+Bing$sentiment <- first(Bing$sentiment)
+
+df %>%
+  unnest_tokens(output = word, input = dialog, token = "ngrams", n = 2) %>%
+  filter(is.na(word)==F) %>%
+  separate(word, c("word1", "word2"), sep = " ") %>% 
+  filter(!word1 %in% c("on", "ha", "in", "the", "be", "are", "i", "you", "is", "to", "a", "has", "of", "it", "he", "was", "it's")) %>%
+  filter(!word2 %in% c("on", "in", "ha", "the", "be", "are", "i", "you", "is", "to", "a", "has", "of", "it", "he", "was", "it's")) %>% 
+  unite(word,word1, word2, sep = " ") %>% 
+  count(word, sort = T) %>% 
+  slice(1:15) %>%
+ggplot(., aes(reorder(word, +n), n))+
+  geom_bar(stat = "identity", width = 0.65, fill = "#a1d76a", alpha = 0.85)+
+  coord_flip()+
+  labs(title = "Most popular bigrams in the movies",
+       subtitle = "Top 15",
+       x = "Bigram content", y = "Frequency")+
+  theme_minimal()
+
+df %>%
+  unnest_tokens(output = word, input = dialog, token = "ngrams", n = 3) %>%
+  filter(is.na(word)==F) %>%
+  separate(word, c("word1", "word2", "word3"), sep = " ") %>% 
+  filter(!word1 %in% c("on", "ha", "in", "the", "be", "are", "i", "you", "is", "to", "a", "has", "of", "it", "he", "was", "it's", "we")) %>%
+  filter(!word2 %in% c("you", "ha", "we", "the")) %>% 
+  filter(!word3 %in% c("on", "in","ha", "the", "be", "are", "i", "you", "is", "to", "a", "has", "of", "it", "he", "was", "it's", "we")) %>% 
+  unite(word,word1, word2, word3, sep = " ") %>% 
+  count(word, sort = T) %>% 
+  slice(1:15) %>%
+ggplot(., aes(reorder(word, +n), n))+
+  geom_bar(stat = "identity", width = 0.62, fill = "#a1d76a", alpha = 0.85)+
+  coord_flip()+
+  labs(title = "Most popular trigrams in the movies",
+       subtitle = "Top 15",
+       x = "Trigram content", y = "Frequency")+
+  theme_minimal()
+```
+
+```{r}
+Sentiment <- df %>%
+  unnest_tokens(output = word, input = dialog) %>%
+  left_join(Bing, "word") %>%
+  filter(is.na(sentiment)==F)
+
+Sentiment %>% 
+  group_by(word, sentiment) %>%
+  summarise(count = n(), .groups = 'drop') %>%
+  arrange(desc(count)) %>%
+  slice(1:20) %>%
+ggplot(., aes(reorder(word, +count), count, fill = sentiment))+
+  geom_bar(stat = "identity", width = 0.62, alpha = 0.9)+
+  scale_fill_brewer(palette = "Set1")+
+  coord_flip()+
+  labs(title = "Most popular words with assigned sentiment",
+       subtitle = "Top 20",
+       x = "Word", y = "Frequency", fill = "Sentiment")+
+  guides(fill = guide_legend(reverse = T))+
+  theme_minimal()+
+  theme(legend.title.align = 0.5, legend.position = "right", legend.direction = "vertical")
+```
+
+```{r}
+Sentiment %>% 
+  group_by(movie, sentiment) %>%
+  summarise(count = n(), .groups = 'drop') %>%
+ggplot(., aes(movie, count, fill = sentiment))+
+  geom_bar(stat = "identity", position = "fill", width = 0.7, alpha = 0.9)+
+  scale_fill_brewer(palette = "Set1")+
+  scale_y_continuous(labels = scales::percent)+
+  coord_flip()+
+  labs(title = "Share of words with positive and negative sentiment",
+       subtitle = "by part of a movie series", fill = "Sentiment",
+       x = "Part of a movie series", y = "Ratio")+
+  guides(fill = guide_legend(reverse = T))+
+  theme_minimal()+
+  theme(legend.title.align = 0.5, legend.position = "right", legend.direction = "vertical")
+```
+
+```{r}
+Sentiment %>% 
+  filter(character %in% c("Harry Potter", "Ron Weasley", "Hermione Granger", "Rubeus Hagrid", "Albus Dumbledore", "Remus Lupin", "Minerva McGonagall", "Draco Malfoy", "Severus Snape", "Lucius Malfoy", "Voldemort", "Tom Riddle", "Sirius Black", "Neville Longbottom"))  %>%
+  group_by(character, sentiment) %>%
+  summarise(count = n(), .groups = 'drop') %>%
+ggplot(., aes(character, count, fill = sentiment))+
+  geom_bar(stat = "identity", position = "fill", width = 0.57, alpha = 0.9)+
+  scale_x_discrete(limits = c("Harry Potter", "Ron Weasley", "Hermione Granger", "Rubeus Hagrid", "Albus Dumbledore", "Remus Lupin", "Minerva McGonagall", "Draco Malfoy", "Severus Snape", "Lucius Malfoy", "Voldemort", "Tom Riddle", "Sirius Black", "Neville Longbottom"))+
+  scale_fill_brewer(palette = "Set1")+
+  scale_y_continuous(labels = scales::percent)+
+  coord_flip()+
+  geom_hline(yintercept = 0.5)+ 
+  labs(title = "Share of words with positive and negative sentiment",
+       subtitle = "by character (top 15 characters with the most sentences)", fill = "Sentiment",
+       x = "Character", y = "Ratio")+
+  guides(fill = guide_legend(reverse = T))+
+  theme_minimal()+
+  theme(legend.title.align = 0.5, legend.position = "right", legend.direction = "vertical")
+```
+
+########################
+
+
+
