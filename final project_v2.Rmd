@@ -6,6 +6,8 @@ format:
   html: 
     toc: true
     toc-depth: 2
+    number-sections: true
+    number-depth: 2
 editor_options: 
   chunk_output_type: inline
 ---
@@ -69,12 +71,32 @@ hp6 <- read_csv("hp6.csv")
 hp7 <- read_csv("hp7.csv")
 hp8 <- read_csv("hp8.csv")
 
-# Fix misspelling of movie#4
+# Fix misspelling of movie #4
 hp4 <- hp4 |> 
   mutate(movie = str_replace_all(string = movie, pattern = "Gobelt", replacement = "Goblet"))
 
 df <- rbind(hp1,hp2,hp3,hp4,hp5,hp6,hp7,hp8)
 ```
+
+### Data wrangling
+
+```{r movies-order}
+movie_order <- tribble(~num, ~movie, ~film.name,
+  1, "Harry Potter and the Philosopher's Stone", "1-Philosopher's Stone",
+  2, "Harry Potter and the Chamber of Secrets", "2-Chamber of Secrets",
+  3, "Harry Potter and the Prisoner of Azkaban", "3-Prisoner of Azkaban",
+  4, "Harry Potter and the Goblet of Fire", "4-Goblet of Fire",
+  5, "Harry Potter and the Order of the Phoenix", "5-Order of the Phoenix",
+  6, "Harry Potter and the Half-Blood Prince", "6-Half-Blood Prince",
+  7, "Harry Potter and the Deathly Hallows Part 1", "7-Deathly Hallows Part 1",
+  8, "Harry Potter and the Deathly Hallows Part 2", "8-Deathly Hallows Part 2"
+  )
+
+df <- df |> 
+  left_join(movie_order, by = "movie")
+```
+
+
 
 ## Initial Hypothesis
 
@@ -84,7 +106,7 @@ Some of the questions we are going to address in the paper are:
 -   Is the number of words related to the length of the films?
 -   What are the most distinctive words or characters in each film?
 
-## 1. TF-IDF
+# 1. TF-IDF
 
 ### Most sentences in movies
 
@@ -130,12 +152,12 @@ However, when reviewing the results and as fans of the saga we are struck by the
 
 Next, we are going to divide this analysis by films, to observe how the phrases are distributed throughout the saga. To do this, we will store the names of the characters mentioned in the following vector, with the licence to change `Horace Slughorn` to `Draco Malfoy`.
 
-```{r}
+```{r fig.width=12}
 top_characters <- c("Harry Potter", "Ron Weasley", "Hermione Granger", "Albus Dumbledore",  "Rubeus Hagrid", "Severus Snape", "Minerva McGonagall", "Voldemort","Neville Longbottom", "Draco Malfoy")
 
 
 
-Char_Dial <- data.frame(table(df$character, df$movie))
+Char_Dial <- data.frame(table(df$character, df$film.name))
 Char_Dial %>%
   arrange(desc(Freq)) %>%
   filter(Var1 %in% top_characters) %>%
@@ -198,7 +220,7 @@ ggplot(spell_counts, aes(x = reorder(spell, n), y = n, fill = spell)) +
 The most used spells are `Expeliarmus` and `Expecto Patronum` with a total of 12 times throughout all 8 movies. But let's see how they are distributed across the series.
 
 ```{r}
-Spels_df <- data.frame(table(df$character, df$movie, df$spell))
+Spels_df <- data.frame(table(df$character, df$film.name, df$spell))
 
 Spels_df %>%
   arrange(desc(Freq)) %>%
@@ -234,24 +256,24 @@ Spels_df |>
   select(Var2, Var3) |> 
   distinct() |> 
   count( Var3) |> 
-  ggplot(aes(reorder(Var3, +n), n, fill = n)) +
-  geom_bar(stat = "identity", width = 0.62) +
-  #scale_fill_manual(values = c("peru", "gray90")) + 
-  coord_flip() +
-  guides(fill = guide_legend(title.position = "top", title = "Movie Part")) +
+  ggplot(aes(y = reorder(Var3, +n), x = n, fill = Var3 == "Riddikulus") ) +
+  geom_bar(stat = "identity", width = 0.62, color = "steelblue") +
+  scale_fill_manual(values = c( "steelblue", "peru")) +
   labs(title = "Riddikulus is in only one movie",
-       subtitle = "Number of movie mentioning spells",
-       x = "Spells",
-       y = "Number of appareances") +
+       subtitle = "Number of movies mentioning this spell",
+       y = "Spells",
+       x = "Number of movies appearing in") + 
   theme_minimal() +
   theme(legend.title.align = 0.5, 
-        legend.position = "right", 
+        legend.position = "none", 
         legend.direction = "vertical",
         plot.title = element_text(size = 14, face = "bold"),
         plot.subtitle = element_text(size = 12),
         axis.title.x = element_text(size = 12),
         axis.title.y = element_text(size = 12),
-        legend.text = element_text(size = 10)) 
+        legend.text = element_text(size = 10),
+        panel.grid.minor = element_blank()
+        ) 
 ```
 
 Having seen how the spells are distributed by film, another way to visualise it is to divide it up according to who the characters are who conjure them. Let's get down to it:
@@ -304,7 +326,7 @@ Let's represent it in a graph.
 ggplot(total_dialogs, aes(x = reorder(movie, -total_dialogs), y = total_dialogs, fill = movie)) +
   geom_bar(stat = "identity") +
   coord_flip() + # Barras horizontales
-  labs(title = "Total Dialogs by Harry Potter Movie",
+  labs(title = "Total Dialogues by Harry Potter Movie",
        x = "Movie",
        y = "Total Dialogs") +
   theme_minimal() +
@@ -464,9 +486,9 @@ Finally, at the beginning of the analysis we were surprised by the sequences of 
 
 # Sentiment analysis
 
-```{r movies-order}
+```{r movies-order, eval=FALSE}
 movie_order <- tribble(~num, ~movie, ~film.name,
-  1 , "Harry Potter and the Philosopher's Stone", "1-Philosopher's Stone",
+  1, "Harry Potter and the Philosopher's Stone", "1-Philosopher's Stone",
   2, "Harry Potter and the Chamber of Secrets", "2-Chamber of Secrets",
   3, "Harry Potter and the Prisoner of Azkaban", "3-Prisoner of Azkaban",
   4, "Harry Potter and the Goblet of Fire", "4-Goblet of Fire",
@@ -482,9 +504,6 @@ df <- df |>
 
 ```{r setup-sentiment-data}
 
-# Bing <- get_sentiments("bing")
-# Bing$sentiment <- first(Bing$sentiment)
-
 bing_sentiment <- df %>%
   unnest_tokens(output = word, input = dialog) %>%
   inner_join(get_sentiments("bing"), "word")
@@ -498,7 +517,7 @@ affinn_sentiments <- df |>
 
 ### Sentiment by chunks of dialogue
 
-```{r plot-affinn-100}
+```{r plot-affinn-100, fig.width=11}
 affinn_sentiments |> 
   group_by(film.name,  index = linenumber %/% 100) %>% # split movie dialogue into chunks of lines. 
   summarise(sentiment = sum(value)) |> # sum up the sentiment 
@@ -526,7 +545,7 @@ When splitting up the dialogue into 100-line chunks, you can see which movies ha
 
 Now let's get more detailed.
 
-```{r plot-affinn-8}
+```{r plot-affinn-8, fig.width=11}
 affinn_sentiments |> 
   group_by(film.name,  index = linenumber %/% 20) %>% 
   summarise(sentiment = sum(value)) |> 
@@ -553,7 +572,7 @@ Now we can see more detailed changes in sentiment with 20-line chunks. The 6th m
 
 Now, let's see about grouping it by chapter:
 
-```{r plot-affinn-chapter}
+```{r plot-affinn-chapter, fig.width=11}
 affinn_sentiments |> 
   group_by(film.name, chapter) %>% # group by chapter 
   summarise(sentiment = sum(value), index = min(linenumber)) |>
@@ -578,19 +597,13 @@ affinn_sentiments |>
   )
 ```
 
-<<<<<<< HEAD
+
 The most positive chapter is in the 6th movie, but close is in the 3rd. Most nagative chapter is in the 2nd. Now we can see one very positive chapter towards the end of teh 8th movie. We also see that the negative detailed chunks in the middle of the 6th movie is gone. All the chapters in the middle 
 
 The three methods of looking at sentiment analysis shows that we will get different results from different methods of grouping text. The first method, large chunks of dialogue, gives an overall feeling for long portions of the movie, but hides the mood of a specific scene. The second method, small chunks of dialogue, shows you the detailed view of sentiment which is cancelled out in the first method. The last method, grouping dialogue by chapter, provides a more natural analysis of the flow of each movie. The writers and director meant for each chapter to have a certain feeling, which can be lost when cutting a movie into chunks of dialogue arbitrarily. 
 
-### Bigrams 
-=======
-The most positive chapter is in the 6th movie, but close is in the 3rd. Most nagative chapter is in the 2nd. Now we can see one very positive chapter towards the end of teh 8th movie. We also see that the negative detailed chunks in the middle of the 6th movie is gone. All the chapters in the middle
+## Bigrams 
 
-The three methods of looking at sentiment analysis shows that we will get different results from different methods of grouping text. The first method, large chunks of dialogue, gives an overall feeling for long portions of the movie, but hides the mood of a specific scene. The second method, small chunks of dialogue, shows you the detailed view of sentiment which is cancelled out in the first method. The last method, grouping dialogue by chapter, provides a more natural analysis of the flow of each movie. The writers and director meant for each chapter to have a certain feeling, which can be lost when cutting a movie into chunks of dialogue arbitrarily.
-
-### Bigrams
->>>>>>> main
 
 ```{r build-bigram}
 df_bigrams <- df %>%
@@ -617,11 +630,8 @@ bigrams_united <- bigrams_filtered %>%
 
 ```
 
-<<<<<<< HEAD
 After removing all stopwords from the list of bigrams, we see a lot of names: Harry Potter, Professor Dumbledore, Sirius Black, and so on. The second most used bigram is "ha ha," which I assume is referring to someone laughing. Also in the top ten is "bloody hell," which is an exclamation and "dark arts," which is part of the name of a class at Hogwarts.  
-=======
-After removing all stopwords from the list of bigrams, we see a lot of names: Harry Potter, Professor Dumblefore, Sirius Black, and so on. The second most used bigram is "ha ha," which I can only assume is referring to someone laughing. Also in the top ten is "bloody hell," which is an exclamation and "dark arts."
->>>>>>> main
+
 
 ```{r bigram}
 bigrams_united %>% 
@@ -630,11 +640,14 @@ bigrams_united %>%
   ggplot(aes(y = reorder(bigram, n), x = n))+
   geom_bar(stat = "identity", width = 0.65, fill = "peru", alpha = 1)+
   labs(title = "Most popular bigrams in the movies",
-       subtitle = "Top 15",
+       subtitle = "Top 15, after removing stopwords",
        y = NULL, x = "Frequency")+
   theme_minimal()
 ```
 
+### Negation words
+
+There is a major problem with simply looking at sentiment for each word by itself: *context*. By itself, the word "funny" is very positive. AFFINN gives it a score of **+4**. But in the context of a dialogue, "not funny" is not positive and could be considered negative. Let's see how many bigrams-- including negations words like *not*, *no*, *never*-- affect the sentiment of the Harry Potter films. 
 
 ```{r}
 negation_words <- c("not", "no", "never", "without", "neither", "nor")
@@ -646,7 +659,7 @@ not_words <- bigrams_separated %>%
 
 ```
 
-```{r not-word-plot}
+```{r not-word-plot, fig.width=11}
 not_words %>%
   mutate(contribution = n * value,
          sign = if_else(value > 0, "postive", "negative")) %>%
@@ -659,7 +672,7 @@ not_words %>%
   geom_col() + 
   geom_vline(xintercept = 0, alpha = .3) +
   scale_y_reordered() + 
-  facet_wrap(~ word1, scales = "free_y", ncol = 4) + 
+  facet_wrap(~ word1, scales = "free_y", ncol = 2) + 
   labs(y = 'Words preceeded by a negation',
        x = "Contribution (Sentiment value * number of mentions)",
        title = "Most common pos or neg words to follow negations") +
@@ -675,7 +688,7 @@ not_words %>%
 ```
 
 
-### Trigrams
+## Trigrams
 
 ```{r building-trigrams}
 
@@ -709,9 +722,9 @@ trigrams_united %>%
   count(trigram, sort = T) %>% 
   slice_max(n, n=10) %>%
   ggplot(aes(y = reorder(trigram, n), x = n))+
-  geom_bar(stat = "identity", width = 0.65, fill = "peru", alpha = 0.85)+
+  geom_bar(stat = "identity", width = 0.65, fill = "peru", alpha = 1)+
   labs(title = "Most popular trigrams in the movies",
-       subtitle = "Top 15",
+       subtitle = "Top 15, after removing stopwords",
        y = NULL, x = "Frequency")+
   theme_minimal()
 ```
@@ -771,7 +784,7 @@ ggplot(., aes(character, count, fill = sentiment))+
   theme(legend.title.align = 0.5, legend.position = "right", legend.direction = "vertical")
 ```
 
-## 3. TOPIC MODELLING
+# 3. TOPIC MODELLING
 
 In a saga with multiple films, such as Harry Potter, where characters, plots and motifs evolve over time, thematic modelling could identify patterns and thematic shifts in the narrative. This could reveal how certain themes are introduced, how they develop over the course of the films, and which films focus more on certain aspects of the story or characters. The advantage is that, instead of looking at individual words as in TF-IDF analysis, we would be examining patterns of words that represent themes, which could provide a deeper understanding of the content and structure of the series' narratives.
 
