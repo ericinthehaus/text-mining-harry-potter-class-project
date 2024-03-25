@@ -224,7 +224,9 @@ Spels_df %>%
 
 ```
 
-Next, we are going to do the same thing but this time instead of separating by films by the number of films they appear in:
+However, there is some confusion in this review because, for example, the spell `Riddikulus`\` might seem to be of great importance to the plot, but in reality, it is not (again, we take advantage of the fact that we are fans to discover this). This spell appears, because in a scene numerous characters say it, because they are in a magic class, but they don't use it again in any film, that's why it only appears in the film of the 'Prisoner of Azkaban'.
+
+In consequence, we are going to do the same thing but this time instead of separating by films by the number of films they appear in:
 
 ```{r}
 Spels_df |> 
