@@ -612,19 +612,20 @@ bigrams_united <- bigrams_filtered %>%
 
 ```
 
-After removing all stopwords from the list of bigrams, we see a lot of names: Harry Potter, Professor Dumblefore, Sirius Black, and so on. The second most used bigram is "ha ha," which I can only assume is referring to someone laughing. Also in the top ten is "bloody hell," which is an exclamation and "dark arts." 
+After removing all stopwords from the list of bigrams, we see a lot of names: Harry Potter, Professor Dumbledore, Sirius Black, and so on. The second most used bigram is "ha ha," which I assume is referring to someone laughing. Also in the top ten is "bloody hell," which is an exclamation and "dark arts," which is part of the name of a class at Hogwarts.  
 
 ```{r bigram}
 bigrams_united %>% 
   count(bigram, sort = T) %>% 
   slice_max(n, n=15) %>%
   ggplot(aes(y = reorder(bigram, n), x = n))+
-  geom_bar(stat = "identity", width = 0.65, fill = "peru", alpha = 0.85)+
+  geom_bar(stat = "identity", width = 0.65, fill = "peru", alpha = 1)+
   labs(title = "Most popular bigrams in the movies",
        subtitle = "Top 15",
        y = NULL, x = "Frequency")+
   theme_minimal()
 ```
+
 
 
 ```{r}
