@@ -508,7 +508,7 @@ affinn_sentiments |>
   scale_fill_gradient2(high = "darkgreen", 
                        midpoint = 0,
                        low = "red3")+
-  facet_wrap(~film.name , ncol = 2) +
+  facet_wrap(~film.name , ncol = 2, scales = "free_x") +
   theme_minimal() +
   theme(
     panel.grid.major.x = element_blank(),
@@ -535,7 +535,7 @@ affinn_sentiments |>
   geom_col(show.legend = FALSE) +
   scale_fill_gradient2(high = "darkgreen", midpoint = 0,
                        low = "red3") +
-  facet_wrap(~film.name , ncol = 2) +
+  facet_wrap(~film.name , ncol = 2, scales = "free_x") +
   theme_minimal() +
   theme(
     panel.grid.major.x = element_blank(),
@@ -579,9 +579,9 @@ affinn_sentiments |>
   )
 ```
 
-Most positive chapter in 6th movie, but close is in the 3rd. Most nagative chapter is in the 2nd. Now we can see one very positive chapter towards the end of teh 8th movie. We also see that the negative detailed chunks in the middle of the 6th movie is gone. All the chapters in the middle 
+The most positive chapter is in the 6th movie, but close is in the 3rd. Most nagative chapter is in the 2nd. Now we can see one very positive chapter towards the end of teh 8th movie. We also see that the negative detailed chunks in the middle of the 6th movie is gone. All the chapters in the middle 
 
-The three 
+The three methods of looking at sentiment analysis shows that we will get different results from different methods of grouping text. The first method, large chunks of dialogue, gives an overall feeling for long portions of the movie, but hides the mood of a specific scene. The second method, small chunks of dialogue, shows you the detailed view of sentiment which is cancelled out in the first method. The last method, grouping dialogue by chapter, provides a more natural analysis of the flow of each movie. The writers and director meant for each chapter to have a certain feeling, which can be lost when cutting a movie into chunks of dialogoue arbitrarily. 
 
 ```{r bigram}
 df %>%
