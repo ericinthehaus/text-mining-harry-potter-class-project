@@ -122,7 +122,7 @@ ggplot(Char_Dial_Top10, aes(x = reorder(Var1, Total_Freq), y = Total_Freq)) +
 
 ```
 
-En este gráfico podemos observar quienes son los 10 personajes más protagonistas en la saga de Harry Potter.
+In this graph we can see who are the 10 most important characters in the Harry Potter saga.
 
 As you might expect, the character who has the most lines in the films is the one who appears in the title of the films and is known as 'The Chosen One' or Harry Potter, to those who aren't such big fans. Harry is followed by his best friends, `Ron Weasly` and `Hermione Granger`, completing the `Golden Trio`.
 
