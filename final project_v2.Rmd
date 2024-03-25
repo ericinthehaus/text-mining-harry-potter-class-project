@@ -482,9 +482,9 @@ For example, in `Harry Potter and the Deathly Hallows Part 1` the most distincti
 
 Finally, at the beginning of the analysis we were surprised by the sequences of dialogue that `Horace Slughorn` had, as he only appears in 3 of the 8 films, but apparently this character is very distinctive in the sixth film, with his name and surname being the most important words in the whole film.
 
-########## 
 
 # SENTIMENT ANALYSIS
+
 
 ```{r movies-order, eval=FALSE}
 # movie_order <- tribble(~num, ~movie, ~film.name,
