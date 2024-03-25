@@ -484,22 +484,22 @@ Finally, at the beginning of the analysis we were surprised by the sequences of 
 
 ########## 
 
-# Sentiment analysis
+# SENTIMENT ANALYSIS
 
 ```{r movies-order, eval=FALSE}
-movie_order <- tribble(~num, ~movie, ~film.name,
-  1, "Harry Potter and the Philosopher's Stone", "1-Philosopher's Stone",
-  2, "Harry Potter and the Chamber of Secrets", "2-Chamber of Secrets",
-  3, "Harry Potter and the Prisoner of Azkaban", "3-Prisoner of Azkaban",
-  4, "Harry Potter and the Goblet of Fire", "4-Goblet of Fire",
-  5, "Harry Potter and the Order of the Phoenix", "5-Order of the Phoenix",
-  6, "Harry Potter and the Half-Blood Prince", "6-Half-Blood Prince",
-  7, "Harry Potter and the Deathly Hallows Part 1", "7-Deathly Hallows Part 1",
-  8, "Harry Potter and the Deathly Hallows Part 2", "8-Deathly Hallows Part 2"
-  )
-
-df <- df |> 
-  left_join(movie_order, by = "movie")
+# movie_order <- tribble(~num, ~movie, ~film.name,
+#   1, "Harry Potter and the Philosopher's Stone", "1-Philosopher's Stone",
+#   2, "Harry Potter and the Chamber of Secrets", "2-Chamber of Secrets",
+#   3, "Harry Potter and the Prisoner of Azkaban", "3-Prisoner of Azkaban",
+#   4, "Harry Potter and the Goblet of Fire", "4-Goblet of Fire",
+#   5, "Harry Potter and the Order of the Phoenix", "5-Order of the Phoenix",
+#   6, "Harry Potter and the Half-Blood Prince", "6-Half-Blood Prince",
+#   7, "Harry Potter and the Deathly Hallows Part 1", "7-Deathly Hallows Part 1",
+#   8, "Harry Potter and the Deathly Hallows Part 2", "8-Deathly Hallows Part 2"
+#   )
+# 
+# df <- df |> 
+#   left_join(movie_order, by = "movie")
 ```
 
 ```{r setup-sentiment-data}
