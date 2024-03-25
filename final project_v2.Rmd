@@ -754,11 +754,11 @@ ggplot(., aes(character, count, fill = sentiment))+
   theme(legend.title.align = 0.5, legend.position = "right", legend.direction = "vertical")
 ```
 
-## TOPIC MODELLING
+## 3. TOPIC MODELLING
 
-En una saga con múltiples películas, como Harry Potter, donde los personajes, los argumentos y los motivos evolucionan a lo largo del tiempo, el modelado de temas podría identificar patrones y cambios temáticos en la narrativa. Esto podría revelar cómo ciertos temas son introducidos, cómo se desarrollan a lo largo de las películas y qué películas se centran más en ciertos aspectos de la historia o los personajes. La ventaja es que, en lugar de mirar palabras individuales como en el análisis TF-IDF, estaríamos examinando patrones de palabras que representan temas, lo que podría proporcionar una comprensión más profunda del contenido y la estructura de las narrativas de la serie.
+In a saga with multiple films, such as Harry Potter, where characters, plots and motifs evolve over time, thematic modelling could identify patterns and thematic shifts in the narrative. This could reveal how certain themes are introduced, how they develop over the course of the films, and which films focus more on certain aspects of the story or characters. The advantage is that, instead of looking at individual words as in TF-IDF analysis, we would be examining patterns of words that represent themes, which could provide a deeper understanding of the content and structure of the series' narratives.
 
-En primer lugar vamos a preparar la dataset con la que vamos a trabajar a lo largo del apartado. Para ello, utilizaremos los capítulos que hacen referencia a the chapter of the movie according to the script
+First of all, we are going to prepare the dataset with which we are going to work throughout the section. To do so, we will use the chapters that refer to the chapter of the movie according to the script
 
 ```{r}
 library(stringr)
@@ -779,11 +779,11 @@ word_counts <- by_chapter_word %>%
 word_counts
 ```
 
-We have now a tidy dataframe with document, word, and how many times the word appears in the document. El siguiente paso es aplicar el LDA a los capítulos.
+We have now a tidy dataframe with document, word, and how many times the word appears in the document. The next step is to apply the LDA to the chapters.
 
 ### LDA
 
-En primer lugar, vamos a observar el grado de sparsity.
+First, let's look at the degree of sparsity.
 
 ```{r}
 chapters_dtm <- word_counts %>%
@@ -792,7 +792,7 @@ chapters_dtm <- word_counts %>%
 chapters_dtm
 ```
 
-Los resultados muestran un 99% de Sparsity en todas las películas, lo que da a entender que el vocabulario que se emplea es muy rico, lo cual es de esperar, debido que al tratarse de guiones de películas, quizá es menos frecuente que el vocabulario tienda a repetirse, como quizá podría ocurrir más en los libros.El alto grado de sparsity is a good sign that the topic modelling will be successful. Por lo que podemos aplicar LDA sin problemas.
+The results show 99% Sparsity in all the films, which suggests that the vocabulary used is very rich, which is to be expected, because as these are film scripts, it is perhaps less frequent that the vocabulary tends to repeat itself, as might be more likely to happen in books. The high degree of sparsity is a good sign that the topic modelling will be successful. So we can apply LDA without problems.
 
 ```{r}
 library(topicmodels)
@@ -801,14 +801,14 @@ chapters_lda <- LDA(chapters_dtm, k = 4, control = list(seed = 1234))
 chapters_lda
 ```
 
-No obstante, para poder continuar con el análisis, es necesario poder trasformar el formato a tidy.
+However, in order to be able to continue with the analysis, it is necessary to be able to transform the format to tidy.
 
 ```{r}
 chapter_topics <- tidy(chapters_lda)
 chapter_topics
 ```
 
-Al analizar los valores de beta en nuestro modelo de temas, es evidente que algunas palabras tienen asociaciones fuertes con temas particulares, lo que nos da pistas sobre su relevancia en el contexto de la historia. Sigamos adelante y visualicemos las cinco palabras principales de cada tema, lo que nos ofrecerá una visión clara y tangible de los motivos recurrentes a lo largo de la serie.
+By analysing the beta values in our theme model, it is evident that some words have strong associations with particular themes, giving us clues as to their relevance in the context of the story. Let's go ahead and visualise the top five words in each theme, which will give us a clear and tangible picture of the recurring motifs throughout the series.
 
 ```{r}
 library(forcats)
@@ -817,36 +817,36 @@ top_terms <- chapter_topics %>%
   slice_max(beta, n = 5) %>%
   ungroup() %>%
   arrange(topic, -beta) %>%
-  mutate(term = reorder_within(term, beta, topic))  # Reordena los términos dentro de cada tema para la visualización
+  mutate(term = reorder_within(term, beta, topic))   # Rearranges the terms within each topic for visualisation
 
 # Creando el gráfico
 ggplot(top_terms, aes(x = beta, y = term, fill = as.factor(topic))) +
   geom_col(show.legend = FALSE) +
   facet_wrap(~ topic, scales = "free") +
-  scale_y_reordered() +  # Asegura que los términos estén correctamente ordenados dentro de las facetas
+  scale_y_reordered() + 
   labs(x = "Beta Value", y = "Top Terms") +
   theme_minimal() +
-  theme(axis.title.y = element_blank(),  # Elimina el título del eje y para más limpieza
-        strip.background = element_rect(fill = "lightblue"),  # Personaliza el fondo de las etiquetas de faceta
-        strip.text = element_text(size = 12, color = "navy"))  # Personaliza el texto de las etiquetas de faceta
+  theme(axis.title.y = element_blank(),  
+        strip.background = element_rect(fill = "lightblue"),  
+        strip.text = element_text(size = 12, color = "navy"))  
 ```
 
-Echando un vistazo, parece que `harry` es un término estrella, encabezando los temas 3,4,5,6,7,8 y en el 2 siendo `Potter`. Esto no es sorprendente, ya que estamos hablando de Harry Potter. En el tema 1, palabras como `sir`,`dumbledore` y `professor`, acompañan a `harry`.
+At a glance, it seems that `harry` is a star term, heading themes 3,4,5,6,7,8 and in 2 being `Potter`. This is not surprising, since we are talking about Harry Potter. In theme 1, words like `sir`, `dumbledore` and `professor`, accompany `harry`.
 
-El tema 2 muestra una variedad diferente, con `ron` y `hermione` cerca de la cima, lo que sugiere que este tema podría tratar sobre los amigos y compañeros de Harry. Por otro lado, el tema 3 destaca `hagrid` y `hermione`junto a `harry`, quizás señalando momentos clave donde estos personajes interactúan o juegan roles significativos.
+Theme 2 shows a different variety, with `ron` and `hermione` near the top, suggesting that this theme could be about Harry's friends and companions, the character whose name is on the cover of the title page, it would be rare if this were not the case. On the other hand, theme 3 highlights `hagrid` and `hermione` alongside `harry`, perhaps pointing to key moments where these characters interact or play significant roles.
 
-Finalmente, el tema 4, aparte de `harry`, destaca `dobby` y `time`. `Dobby` podría estar asociado a momentos emocionales y significativos de la saga, mientras que "time" podría estar relacionado con eventos críticos en la trama o incluso con el giratiempo de "El Prisionero de Azkaban".
+Finally, theme 4, apart from `harry`, highlights `dobby` and `time`. `Dobby` could be associated with emotional and significant moments in the saga, while `time` could be related to critical events in the plot or even to the time-turner in "The Prisoner of Azkaban".
 
 ### Each chapter to its book
 
-Una vez, hemos hemos identificado esas palabras clave que definen con cada tema, el siguiente paso es intentar reconstruir el rompecabezas de los capítulos y asignar cada uno a su libro original. Para hacerlo, vamos a utilizar gamma, que nos dice la probabilidad de que un capítulo contenga ciertos temas. Piensa en gamma como la afinidad que tiene un capítulo por los temas que hemos identificado, algo así como el Sombrero Seleccionador decidiendo a qué casa de Hogwarts perteneces (si el que está leyendo esto no ha visto una película o ha leido los libros de Harry Potter, se ha perdido una referencia muy buena de explicar el `gamma`) . Con esta información, podemos predecir a qué libro podría pertenecer cada capítulo basándonos en sus temas dominantes.
+Once we have identified those keywords that define each theme, the next step is to try to reconstruct the puzzle of chapters and assign each one to its original book. To do this, we are going to use gamma, which tells us the probability that a chapter contains certain themes. Think of gamma as the relationship a chapter has to the different topics, sort of like the `Sorting Hat` deciding which Hogwarts house you belong to (if the person reading this hasn't seen a movie or read the Harry Potter books, they've missed a very good reference for explaining gamma). With this information, we can predict which book each chapter might belong to based on its dominant themes.
 
 ```{r}
 chapters_gamma <- tidy(chapters_lda, matrix = "gamma")
 chapters_gamma
 ```
 
-Al final, cada capítulo tendrá una serie de probabilidades asociadas a los temas, y, por ende, una sugerencia de a qué libro pertenece. Este paso es crucial porque nos permite ver cómo se agrupan los capítulos y validar nuestra comprensión temática de los libros. Si lo hacemos bien, ¡podremos ver cómo las piezas del rompecabezas se unen perfectamente!
+At the end, each chapter will have a set of probabilities associated with the themes, and thus a suggestion of which book it belongs to. This step is crucial because it allows us to see how the chapters are grouped together. If we get it right, we can see how the pieces of the puzzle fit together perfectly!
 
 ```{r}
 chapters_gamma <- chapters_gamma %>%
@@ -860,20 +860,20 @@ And now, let's make a plot:
 ```{r,  fig.width=15, fig.asp=0.65, out.width='100%', preview = TRUE}
 # reorder titles in order of topic 1, topic 2, etc before plotting
 chapters_gamma %>%
-  mutate(title = fct_reorder(title, gamma, .fun = sum)) %>%  # Reordena los títulos sumando las gammas
-  ggplot(aes(x = factor(topic), y = gamma, fill = factor(topic))) +  # Usa el tema como color
+  mutate(title = fct_reorder(title, gamma, .fun = sum)) %>%  # Rearrange the titles by adding the gammas
+  ggplot(aes(x = factor(topic), y = gamma, fill = factor(topic))) +  
   geom_boxplot() +
-  facet_wrap(~ title, scales = "free_y") +  # Facetas por título con escalas libres en y
+  facet_wrap(~ title, scales = "free_y") +  
   labs(x = "Topic", y = expression(Gamma)) +
-  theme_minimal() +  # Tema minimalista para limpiar el gráfico
-  theme(legend.position = "none",  # Removemos la leyenda para evitar redundancia
-        axis.title.x = element_blank(),  # Removemos el título del eje x para una apariencia más limpia
+  theme_minimal() +  
+  theme(legend.position = "none",  
+        axis.title.x = element_blank(),  
         axis.text.x = element_text(angle = 45, hjust = 1))
 ```
 
-Podemos observar cómo algunos libros muestran una preferencia clara por ciertos temas, indicada por la altura de las cajas en cada tema. Por ejemplo, `Harry Potter and the Half-Blood Prince` tiene una caja muy alta en el tema representado en rojo, lo que podría indicar que este tema es especialmente prominente en ese libro. En contraste, `Harry Potter and the Chamber of Secrets` muestra una distribución más uniforme entre dos temas, con las cajas más altas en verde y azul, es decir, lo que representaria al topic 2 y 3
+We can observe how some books show a clear preference for certain themes, indicated by the height of the boxes in each theme. For example, `Harry Potter and the Half-Blood Prince` has a very high box in the theme depicted in red, which might indicate that this theme is particularly prominent in that book. In contrast, `Harry Potter and the Chamber of Secrets` shows a more even distribution between two themes, with the highest boxes in green and blue, i.e. what would represent topic 2 and 3.
 
-La dispersión de los puntos fuera de las cajas, es decir, los outliers, podría señalar capítulos que son excepcionalmente diferentes en su contenido temático en comparación con otros capítulos dentro de su mismo libro. Por ejemplo, hay algunos capítulos en "Harry Potter and the Order of the Phoenix" que parecen ser únicos en su perfil temático, dada la dispersión de los puntos.
+The scattering of dots outside the boxes, i.e. outliers, could point to chapters that are uniquely different in their thematic content compared to other chapters within the same book. For example, there are some chapters in `Harry Potter and the Order of the Phoenix` that appear to be unique in their thematic profile, given the scattering of dots.
 
 Let's investigate further.
 
@@ -889,13 +889,13 @@ chapter_classifications <- chapters_gamma %>%
 chapter_classifications
 ```
 
-Parece que la mayoría de los capítulos de "La Cámara Secreta" tienen una vinculación casi total (valores de gamma muy cercanos a 1) con los temas 2 y 3. Por ejemplo, los capítulos `About the Chamber`, `Aragog`, y `Cornelius Fudge` están firmemente ligados al tema 3.
+It seems that most of the chapters of "The Chamber of Secrets" have an almost total linkage (gamma values very close to 1) with themes 2 and 3. For example, the chapters `About the Chamber`, `Aragog`, and `Cornelius Fudge` are strongly linked to theme 3.
 
-Algunos capítulos, como `Backfire` y `Car rescue`, están asociados casi completamente con el tema 2, lo que podría representar otra faceta central de la narrativa de este libro, tal vez más orientada hacia la acción y la aventura.
+Some chapters, such as `Backfire` and `Car rescue`, are almost entirely associated with theme 2, which could represent another central facet of this book's narrative, perhaps more action- and adventure-oriented.
 
-Sin embargo, hay capítulos como `Dobby's reward` y `Dobby's warning` que se desvían de esta tendencia, con una relación más fuerte con el tema 4, que puede estar reflejando aspectos más relacionados con el desarrollo del personaje o elementos de la trama que no están tan centrados en el misterio principal de la cámara.
+However, there are chapters such as `Dobby's reward` and `Dobby's warning` that deviate from this trend, with a stronger relationship to theme 4, which may be reflecting aspects more related to character development or plot elements that are not as focused on the main mystery of the chamber.
 
-Finalmente, para concluir nuestro análisis mágico, vamos a desvelar aquellos capítulos que, al parecer, han dado un giro inesperado en la trama y se han alineado con temas diferentes al hilo principal de su libro. Imagínalo como el Sombrero Seleccionador teniendo un día peculiar y asignando estudiantes a casas inesperadas (otra referencia muy buena que si eres fan seguro que has disfrutado y si no tienes ni idea de lo que hablo, pido perdon :))
+Finally, to conclude our magical analysis, let's unveil those chapters that seem to have taken an unexpected plot twist and aligned themselves with themes different from the main thread of your book. Imagine it as the `Sorting Hat` having a peculiar day and assigning students to unexpected houses (another great reference that if you're a fan you're sure to have enjoyed and if you have no idea what I'm talking about, I apologise :)).
 
 First, we create a dataframe just with two columns: the book and its consensus topic.
 
@@ -918,6 +918,6 @@ chapter_classifications %>%
   filter(title != consensus)
 ```
 
-La mayoría de los capítulos se asocian consistentemente con el tema 3, lo que sugiere que este tema captura elementos clave que son centrales en este libro particular. Es posible que el tema 3 encapsule el misterio y el suspense de la Cámara de los Secretos.
+Most chapters are consistently associated with theme 3, suggesting that this theme captures key elements that are central to this particular book. It is possible that theme 3 encapsulates the mystery and suspense of the Chamber of Secrets.
 
-Sin embargo, también hay capítulos asociados con otros temas, como "Backfire" y "Car rescue" con el tema 2, y "Chamber of Secrets" con el tema 1, lo que nos dice que hay diversidad temática en el libro. Particularmente interesante es "Dobby's reward" y "Dobby's warning", que se desmarcan con una asociación al tema 4; esto puede indicar una subtrama o un enfoque en aspectos del desarrollo del personaje, especialmente en lo que respecta a Dobby.
+However, there are also chapters associated with other themes, such as "Backfire" and "Car rescue" with theme 2, and "Chamber of Secrets" with theme 1, which tells us that there is thematic diversity in the book. Particularly interesting is "Dobby's reward" and "Dobby's warning", which are unmarked with an association to theme 4; this may indicate a subplot or a focus on aspects of character development, especially as it relates to Dobby.
