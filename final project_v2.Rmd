@@ -110,7 +110,7 @@ Some of the questions we are going to address in the paper are:
 -   Does the grouping size of dialogue chunks affect our results in sentiment analysis? 
 
 
-# 1. TF-IDF
+# TF-IDF
 
 ### Most sentences in movies
 
@@ -803,7 +803,7 @@ bing_sentiment %>%
 Of the top 15 characters with the most lines, `Remus Lupin` and `Minerva McGonagall` have the highest share of positive sentiment. That makes sense given their inspirational impact on the plot. Not surprisingly, `Draco Malfoy` and his father `Lucius Malfoy` are the most negative characters. `Tom Riddle`, the character later known as `Voldemort`, has a higher share of positive words than his later self. This is interesting because it shows a change in personality development as he grows up and becomes an evil villain. 
 
 
-# 3. TOPIC MODELLING
+# TOPIC MODELLING
 
 In a saga with multiple films, such as Harry Potter, where characters, plots and motifs evolve over time, thematic modelling could identify patterns and thematic shifts in the narrative. This could reveal how certain themes are introduced, how they develop over the course of the films, and which films focus more on certain aspects of the story or characters. The advantage is that, instead of looking at individual words as in TF-IDF analysis, we would be examining patterns of words that represent themes, which could provide a deeper understanding of the content and structure of the series' narratives.
 
