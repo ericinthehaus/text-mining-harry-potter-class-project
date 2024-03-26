@@ -146,13 +146,13 @@ ggplot(Char_Dial_Top10, aes(x = reorder(Var1, Total_Freq), y = Total_Freq)) +
 
 In this graph we can see who are the 10 most important characters in the Harry Potter saga.
 
-As you might expect, the character who has the most lines in the films is the one who appears in the title of the films and is known as 'The Chosen One' or Harry Potter, to those who aren't such big fans. Harry is followed by his best friends, `Ron Weasly` and `Hermione Granger`, completing the `Golden Trio`.
+As you might expect, the character who has the most lines in the films is the one who appears in the title of the films and is known as 'The Chosen One' or Harry Potter, to those who aren't such big fans. Harry is followed by his best friends, `Ron Weasley` and `Hermione Granger`, completing the `Golden Trio`.
 
-However, when reviewing the results and as fans of the saga we are struck by the appearance of a particular character `Horace Slughorn` this character appears in the sixth installment having great prominence only in this one, being more forgotten in the last two. In addition, in this list there are great forgotten characters such as `Draco Malfoy` who despite being a very important character in the saga, being one of the main enemies of Harry Potter, is not in the top 10. This could be an indication of the great impact that this character had on popular culture, as everyone who has seen the films or read the books remembers this character, but instead he hardly appears on screen, according to the results obtained.
+However, when reviewing the results and as fans of the saga we are struck by the appearance of a particular character `Horace Slughorn`. This character appears in the sixth installment having great prominence only in this one, being more forgotten in the last two. In addition, in this list there are great forgotten characters such as `Draco Malfoy` who despite being a very important character in the saga, being one of the main enemies of Harry Potter, is not in the top 10. This could be an indication of the great impact that this character had on popular culture, as everyone who has seen the films or read the books remembers this character, but instead he hardly appears on screen, according to the results obtained.
 
 Next, we are going to divide this analysis by films, to observe how the phrases are distributed throughout the saga. To do this, we will store the names of the characters mentioned in the following vector, with the licence to change `Horace Slughorn` to `Draco Malfoy`.
 
-```{r fig.width=12}
+```{r fig.width=11, fig.height=8}
 top_characters <- c("Harry Potter", "Ron Weasley", "Hermione Granger", "Albus Dumbledore",  "Rubeus Hagrid", "Severus Snape", "Minerva McGonagall", "Voldemort","Neville Longbottom", "Draco Malfoy")
 
 
@@ -163,7 +163,7 @@ Char_Dial %>%
   filter(Var1 %in% top_characters) %>%
   ggplot(aes(reorder(Var1, +Freq), Freq, fill = Var2)) +
   geom_bar(stat = "identity", width = 0.62)+
-  scale_fill_uchicago()+
+  scale_fill_brewer(type = "div", ) +
   coord_flip()+
   guides(fill = guide_legend(title.position = "top", reverse = T))+
   labs(title = "Characters with the most sentences",
@@ -187,6 +187,7 @@ spells <- c('Accio', 'Alohomora', 'Avada Kedavra', 'Crucio', 'Expecto Patronum',
 # We add a column to identify the spell mentioned in each dialogue.
 df$spell <- NA  # Initialize the variable with `NA`
 
+# Loop through the `spells` vector. For each spell, check if it is written in each line of the script. If it is present in that line, add that spell to the variable `spell` in `df` for that row.  
 for(spell in spells) {
   df$spell <- ifelse(grepl(spell, df$dialog, ignore.case = TRUE), spell, df$spell)
 }
@@ -194,7 +195,7 @@ for(spell in spells) {
 # We calculate the count of each spell.
 spell_counts <- df %>%
   filter(!is.na(spell)) %>% # Exclude lines without spells
-  count(spell, sort = TRUE) # Count occurances for each spell and sort in order
+  count(spell, sort = TRUE) # Count occurrances for each spell and sort in order
 
 library(viridis) # Make sure to have this package installed
 
@@ -246,7 +247,7 @@ Spels_df %>%
 
 ```
 
-However, there is some confusion in this review because, for example, the spell `Riddikulus`\` might seem to be of great importance to the plot, but in reality, it is not (again, we take advantage of the fact that we are fans to discover this). This spell appears, because in a scene numerous characters say it, because they are in a magic class, but they don't use it again in any film, that's why it only appears in the film of the 'Prisoner of Azkaban'.
+However, there is some confusion in this review because, for example, the spell `Riddikulus` might seem to be of great importance to the plot, but in reality, it is not (again, we take advantage of the fact that we are fans to discover this). This spell appears, because in a scene numerous characters say it, because they are in a magic class, but they don't use it again in any film, that's why it only appears in the film of the 'Prisoner of Azkaban'.
 
 In consequence, we are going to do the same thing but this time instead of separating by films by the number of films they appear in:
 
@@ -276,7 +277,7 @@ Spels_df |>
         ) 
 ```
 
-Having seen how the spells are distributed by film, another way to visualise it is to divide it up according to who the characters are who conjure them. Let's get down to it:
+Having seen how the spells are distributed by film, another way to visualize it is to divide it up according to who the characters are who conjure them. Let's get down to it:
 
 ```{r,  fig.width=15, fig.asp=0.65, out.width='100%', preview = TRUE}
 
@@ -285,19 +286,22 @@ spell_character_counts <- df %>%
   count(spell, character) %>%
   arrange(spell, desc(n))
 
-# Creando el gráfico
-ggplot(spell_character_counts, aes(x = reorder(character, n), y = n, fill = character)) +
+# Create the graph
+ggplot(spell_character_counts, aes(y = reorder(character, n), x = n, fill = character, label = n)) +
   geom_bar(stat = "identity") +
+  geom_text(hjust = -1) +
   facet_wrap(~ spell, scales = "free_y") + 
-  coord_flip() + 
   scale_fill_viridis_d(begin = 0.2, end = 0.8, direction = -1, option = "C") + 
   labs(title = "Character Spell Usage",
-       x = "Character",
-       y = "Frequency of Spell Usage") +
+         y = NULL,
+       x = "Frequency of Spell Usage") +
   theme_minimal() +
   theme(axis.text.x = element_text(angle = 45, hjust = 1),
-        strip.text.x = element_text(face = "bold"),
-        legend.position = "none") 
+        strip.text.x = element_text(face = "bold", hjust = 0, size = 12),
+        legend.position = "none",
+        panel.border = element_rect(fill = NA, color = "gray20")
+        ) + 
+   scale_x_continuous(breaks = c(0,2,4,6,8,10), limits = c(0,10)) 
 ```
 
 Here we can see the distribution of the different spells cast by the different characters. We can see how most of them are dominated by either `Harry Potter` or `Hermione Granger`. Or in the case of the 'Unforgivable Curses' (for non-fans, we are referring to spells that are forbidden in the Harry Potter world, such as `Avada Kedabra`), predominate `Voldemort` and other dark wizards from the saga. This serves as a great indicator of the relevance of these characters, as well as showing who other influential characters are in the plot.
@@ -306,13 +310,13 @@ At this point, we have already found out which spells are used the most and whic
 
 ### Most used Words
 
-The first step is to check which film is the most scripted or the longest. That is to say, we will assimilate that the films that have the most dialogue are those that offer us the most minutes on the big screen.
+The first step is to check which film is the most scripted or the longest. That is to say, we will assume that the films that have the most dialogue are those that offer us the most minutes on the big screen.
 
 ```{r}
 library(dplyr)
 
 total_dialogs <- df %>%
-  group_by(movie) %>%
+  group_by(film.name) %>%
   summarize(total_dialogs = n()) # Count the number of rows per group, which is equivalent to counting dialogues.
 
 total_dialogs
@@ -323,12 +327,11 @@ Let's represent it in a graph.
 
 ```{r}
 
-ggplot(total_dialogs, aes(x = reorder(movie, -total_dialogs), y = total_dialogs, fill = movie)) +
+ggplot(total_dialogs, aes(y = reorder(film.name, -total_dialogs), x = total_dialogs, fill = film.name)) +
   geom_bar(stat = "identity") +
-  coord_flip() + # Barras horizontales
   labs(title = "Total Dialogues by Harry Potter Movie",
-       x = "Movie",
-       y = "Total Dialogs") +
+       y = NULL,
+       x = "Total Dialogues") +
   theme_minimal() +
   theme(legend.position = "none") 
 
@@ -336,7 +339,7 @@ ggplot(total_dialogs, aes(x = reorder(movie, -total_dialogs), y = total_dialogs,
 
 Looking at the results and comparing it with the length of the films, we can see that it does not match, i.e. the film with the most dialogue is `Harry Potter and the Order of the Phoenix`, being the second shortest film of the saga. The information about the duration of the films is the following, although you can find more information about it, in the following [link](https://www.pottertalk.net/harry-potter-movie-lengths/).
 
--   Sorcerer’s Stone = 152 minutes = 2 hours 32 minutes
+-   Philosopher’s Stone = 152 minutes = 2 hours 32 minutes
 
 -   Chamber of Secrets = 161 minutes = 2 hours 41 minutes
 
@@ -460,7 +463,7 @@ movie_tf_idf <- movie_words %>%
   #we arrange by tf-idf in descending order
   arrange(desc(tf_idf))
 
-# Vizualization
+# Visualization
 movie_tf_idf %>%
   group_by(movie) %>%
   slice_max(tf_idf, n = 20) %>%
@@ -485,44 +488,31 @@ Finally, at the beginning of the analysis we were surprised by the sequences of 
 
 # SENTIMENT ANALYSIS
 
-
-```{r movies-order, eval=FALSE}
-# movie_order <- tribble(~num, ~movie, ~film.name,
-#   1, "Harry Potter and the Philosopher's Stone", "1-Philosopher's Stone",
-#   2, "Harry Potter and the Chamber of Secrets", "2-Chamber of Secrets",
-#   3, "Harry Potter and the Prisoner of Azkaban", "3-Prisoner of Azkaban",
-#   4, "Harry Potter and the Goblet of Fire", "4-Goblet of Fire",
-#   5, "Harry Potter and the Order of the Phoenix", "5-Order of the Phoenix",
-#   6, "Harry Potter and the Half-Blood Prince", "6-Half-Blood Prince",
-#   7, "Harry Potter and the Deathly Hallows Part 1", "7-Deathly Hallows Part 1",
-#   8, "Harry Potter and the Deathly Hallows Part 2", "8-Deathly Hallows Part 2"
-#   )
-# 
-# df <- df |> 
-#   left_join(movie_order, by = "movie")
-```
+We will perform Sentiment Analysis on all the dialogues using the `Bing` and `AFINN` lexicon dictionaries. The Bing lexicon provides two options for each word in its dictionary: `positive` or `negative`. The AFINN dictionary includes a numerical score between [-5, +5], which will be more useful for quantifying the mood of a dialogue, scene or large portions of the movie. 
 
 ```{r setup-sentiment-data}
 
+# Bing dataset  
 bing_sentiment <- df %>%
   unnest_tokens(output = word, input = dialog) %>%
   inner_join(get_sentiments("bing"), "word")
 
-affinn_sentiments <- df |>
-  mutate(linenumber = row_number(), .by = film.name)  %>% 
+# Afinn dataset 
+AFINN_sentiments <- df |>
+  mutate(linenumber = row_number(), .by = film.name)  %>% # adds a line number to each dialogue, starting at one for each movie. 
   unnest_tokens(output = word, input = dialog) %>%
-  inner_join(get_sentiments("afinn")) %>% 
-  mutate(method = "AFINN")
+  inner_join(get_sentiments("afinn"))
 ```
 
 ### Sentiment by chunks of dialogue
 
-```{r plot-affinn-100, fig.width=11}
-affinn_sentiments |> 
+```{r plot-AFINN-100, fig.width=11}
+AFINN_sentiments |> 
   group_by(film.name,  index = linenumber %/% 100) %>% # split movie dialogue into chunks of lines. 
   summarise(sentiment = sum(value)) |> # sum up the sentiment 
-  ggplot(aes(index, sentiment, fill = sentiment)) +
+  ggplot(aes(index, sentiment, fill = sentiment, label = sentiment)) +
   geom_col(show.legend = FALSE) +
+  geom_text( ) +
   scale_fill_gradient2(high = "darkgreen", 
                        midpoint = 0,
                        low = "red3")+
@@ -537,7 +527,7 @@ affinn_sentiments |>
   ) +
   labs(
     x = "Each chunk split up by 100 lines",
-    subtitle = "AFFINN method"
+    subtitle = "AFINN method"
   )
 ```
 
@@ -545,8 +535,8 @@ When splitting up the dialogue into 100-line chunks, you can see which movies ha
 
 Now let's get more detailed.
 
-```{r plot-affinn-8, fig.width=11}
-affinn_sentiments |> 
+```{r plot-AFINN-8, fig.width=11}
+AFINN_sentiments |> 
   group_by(film.name,  index = linenumber %/% 20) %>% 
   summarise(sentiment = sum(value)) |> 
   ggplot(aes(index, sentiment, fill = sentiment)) +
@@ -558,13 +548,13 @@ affinn_sentiments |>
   theme(
     panel.grid.major.x = element_blank(),
     panel.grid.minor = element_blank(),
-    axis.text = element_blank(), 
+    axis.text.x = element_blank(), 
     strip.text = element_text(face = "bold", hjust = 0),
     panel.border = element_rect(fill = NA, color = "gray20")
   ) +
   labs(
     x = "Each chunk split up by 20 lines",
-    subtitle = "AFFINN method"
+    subtitle = "AFINN method"
   ) 
 ```
 
@@ -572,8 +562,8 @@ Now we can see more detailed changes in sentiment with 20-line chunks. The 6th m
 
 Now, let's see about grouping it by chapter:
 
-```{r plot-affinn-chapter, fig.width=11}
-affinn_sentiments |> 
+```{r plot-AFINN-chapter, fig.width=11}
+AFINN_sentiments |> 
   group_by(film.name, chapter) %>% # group by chapter 
   summarise(sentiment = sum(value), index = min(linenumber)) |>
   arrange(index) |> 
@@ -587,13 +577,13 @@ affinn_sentiments |>
   theme(
     panel.grid.major.x = element_blank(),
     panel.grid.minor = element_blank(),
-    axis.text = element_blank(), 
+    axis.text.x = element_blank(), 
     strip.text = element_text(face = "bold", hjust = 0),
     panel.border = element_rect(fill = NA, color = "gray20")
   )+
   labs(
     x = "Each chunk split up by chapter",
-    subtitle  = "AFFINN method"
+    subtitle  = "AFINN method"
   )
 ```
 
@@ -604,6 +594,7 @@ The three methods of looking at sentiment analysis shows that we will get differ
 
 ## Bigrams 
 
+Bigrams are consecutive words in the script, which can give us more context than looking at single words. We would expect to see lots of names (like Harry Potter) and common 2-word phrases. But many 2-word phrases are not helpful for text analysis so we will take out all stopwords. 
 
 ```{r build-bigram}
 df_bigrams <- df %>%
@@ -611,9 +602,14 @@ df_bigrams <- df %>%
   unnest_tokens(bigram, dialog, token = "ngrams", n = 2) %>%
   drop_na(bigram)
 
+# all bigrams, before taking out stopwords
 df_bigrams %>%
   count(bigram, sort = TRUE)
+```
 
+Notice how the most popular bigrams are "in the" and "are you," which do not provide valuable information about the topic or sentiment. Let's remove the stopwords and see what we get. 
+ 
+```{r bigram-filter}
 bigrams_separated <- df_bigrams |> 
   # separate each bigram in two columns, word1 and word2
   separate(bigram, c("word1", "word2"), sep = " ")
@@ -647,7 +643,7 @@ bigrams_united %>%
 
 ### Negation words
 
-There is a major problem with simply looking at sentiment for each word by itself: *context*. By itself, the word "funny" is very positive. AFFINN gives it a score of **+4**. But in the context of a dialogue, "not funny" is not positive and could be considered negative. Let's see how many bigrams-- including negations words like *not*, *no*, *never*-- affect the sentiment of the Harry Potter films. 
+There is a major problem with simply looking at sentiment for each word by itself: *context*. By itself, the word "funny" is very positive. The AFINN lexicon gives it a score of **+4**. But in the context of a dialogue, "not funny" is not positive and could be considered negative! Let's see how many bigrams that include negations words like *not*, *no*, and *never*, affect the sentiment of the Harry Potter films. 
 
 ```{r}
 negation_words <- c("not", "no", "never", "without", "neither", "nor")
@@ -661,15 +657,17 @@ not_words <- bigrams_separated %>%
 
 ```{r not-word-plot, fig.width=11}
 not_words %>%
-  mutate(contribution = n * value,
+  mutate(contribution = n * value, # multiply the number of appearances with the value that AFINN assigns to the word to get its overall contribution to the movies. 
          sign = if_else(value > 0, "postive", "negative")) %>%
   group_by(word1) %>% 
-  slice_max(abs(contribution), n=10) %>%
+  slice_max(abs(contribution), n=10) %>% # get the top 10 bigrams for each negation word. 
   ungroup() %>%
   ggplot(aes(y = reorder_within(word2, contribution, word1), 
              x = contribution, 
-             fill = contribution)) +
+             fill = contribution,
+             label = contribution)) +
   geom_col() + 
+  geom_text() +
   geom_vline(xintercept = 0, alpha = .3) +
   scale_y_reordered() + 
   facet_wrap(~ word1, scales = "free_y", ncol = 2) + 
@@ -681,24 +679,29 @@ not_words %>%
                        low = "red3")+
   theme_minimal() +
   theme(
-    strip.text = element_text(face = "bold", hjust = 0),
+    strip.text = element_text(face = "bold", hjust = 0, size = 12),
     panel.border = element_rect(fill = NA, color = "gray20"),
     legend.position = "none"
   ) 
 ```
+Now we see a different picture of the sentiment analysis performed before with single words. The negation bigram that provided provided the largest absolute contribution was "no no," but I think it could still be considered negative in a dialogue. We see that "not good" falsely contributed to 21 points in the positive direction. 
 
+Excluding "no no," the net contribution of the negation words is **7**, but should have been in the negative direction. 
+
+```{r}
+not_words |> filter( not(word2=="no" & word1=="no")) |> 
+ summarise(sum = sum(value * n, na.rm = T))
+```
 
 ## Trigrams
 
-```{r building-trigrams}
+Yet another form of tokenization is to look at three consecutive words. This provides even more information for topic modelling, term frequency and sentiment analysis. Once again, we must take out the stopwords. 
 
+```{r building-trigrams}
 df_trigrams <- df %>%
   #we take the dialogue in df, and tokenize it to sequences of 2 words
   unnest_tokens(trigram, dialog, token = "ngrams", n = 3) %>%
   drop_na(trigram)
-
-df_trigrams %>%
-  count(trigram, sort = TRUE)
 
 trigrams_separated <- df_trigrams |> 
   # separate each trigram in three columns, word1 and word2 and word3
@@ -716,6 +719,8 @@ trigrams_united <- trigrams_filtered %>%
   unite(trigram, word1, word2, word3, sep = " ")
 ```
 
+We can see some familiar words in the most popular trigrams: "ha ha ha" and "dark arts teacher." Not as many proper names, but we do have "Professor Dumblefdore Sir" in the top ten. 
+
 
 ```{r trigram}
 trigrams_united %>% 
@@ -729,6 +734,10 @@ trigrams_united %>%
   theme_minimal()
 ```
 
+### Using Bing's lexicon
+
+Let's see how Bing's lexicon describes the sentiment for this movie series.  
+
 ```{r}
 bing_sentiment %>% 
   group_by(word, sentiment) %>%
@@ -736,53 +745,59 @@ bing_sentiment %>%
   ungroup() %>%
   arrange(desc(count)) %>%
   slice(1:20) %>%
-  ggplot(., aes(y = reorder(word, count), x = count, fill = sentiment))+
+  ggplot(aes(y = reorder(word, count), x = count, fill = sentiment))+
   geom_bar(stat = "identity", width = 0.62)+
-  scale_fill_brewer(palette = "Set1", type = "div") +
-  labs(title = "Most popular words with assigned sentiment",
-       subtitle =  expression("Top 20 words"),
-       x = "Word", y = "Frequency", fill = "Sentiment")+
+  scale_fill_manual(values = c("darkred", "darkgreen")) +
+  labs(title = "Top 10 most popular words with assigned sentiment",
+       subtitle =  "Bing lexicon",
+       y = NULL, x = "Frequency", fill = "Sentiment")+
   guides(fill = guide_legend(reverse = T))+
   theme_minimal()+ 
   theme(legend.position = "top")
 ```
 
+The most common words in Bing's dictionary that show up in the Harry Potter series are "well," "right," and "like." The top four words are positive and the next three after that are negative. Just looking at this graph, it appears that the negative words are related to killing and death. 
+
 ```{r}
 bing_sentiment %>% 
-  group_by(movie, sentiment) %>%
-  summarise(count = n())%>%
+  group_by(film.name, num, sentiment) %>%
+  summarise(count = n()) %>%
   ungroup() |> 
-   ggplot(aes(y = movie, x = count, fill = sentiment)) +
+   ggplot(aes(y = reorder(film.name, -num ), x = count, fill = sentiment)) +
   geom_bar(stat = "identity", position = "fill", width = 0.7, alpha = 0.9)+
-  scale_fill_brewer(palette = "Set1")+
- #  scale_y_continuous(labels = scales::percent)+
+  geom_vline(xintercept = 0.5) +
+  scale_fill_manual(values = c("red4", "darkgreen"))+
+  scale_x_continuous(labels = scales::percent)+
   labs(title = "Share of words with positive and negative sentiment",
-       subtitle = "by movie", fill = "Sentiment",
+       subtitle = "Bing lexicon", fill = "Sentiment",
        x = "Percentage", y = "Ratio")+
   guides(fill = guide_legend(reverse = T))+
   theme_minimal()+
   theme(legend.position = "top")
 ```
 
+We can see that two films have a higher share of negative sentiment words: *Chamber of Secrets* and *Deathly Hallows Part 2*. Recall that *Chamber of Secrets* had the most negative chapter in all the movies, according to AFINN. The *Half-Blood Prince* has a higher share of positive words, which aligns with the AFINN lexicon. Despite some dark scenes in the Harry Potter series, most movies have a slightly higher share of positive sentiment overall. 
+
 ```{r}
 bing_sentiment %>% 
   filter(character %in% c("Harry Potter", "Ron Weasley", "Hermione Granger", "Rubeus Hagrid", "Albus Dumbledore", "Remus Lupin", "Minerva McGonagall", "Draco Malfoy", "Severus Snape", "Lucius Malfoy", "Voldemort", "Tom Riddle", "Sirius Black", "Neville Longbottom"))  %>%
   group_by(character, sentiment) %>%
   summarise(count = n(), .groups = 'drop') %>%
-ggplot(., aes(character, count, fill = sentiment))+
-  geom_bar(stat = "identity", position = "fill", width = 0.57, alpha = 0.9)+
-  scale_x_discrete(limits = c("Harry Potter", "Ron Weasley", "Hermione Granger", "Rubeus Hagrid", "Albus Dumbledore", "Remus Lupin", "Minerva McGonagall", "Draco Malfoy", "Severus Snape", "Lucius Malfoy", "Voldemort", "Tom Riddle", "Sirius Black", "Neville Longbottom"))+
-  scale_fill_brewer(palette = "Set1")+
-  scale_y_continuous(labels = scales::percent)+
-  coord_flip()+
-  geom_hline(yintercept = 0.5)+ 
+   ggplot(aes(y= reorder(character, count), x = count, fill = sentiment))+
+  geom_bar(stat = "identity", position = "fill", width = 0.57, alpha = 0.9) +
+  scale_fill_manual(values = c("darkred", "darkgreen"))+
+  scale_x_continuous(labels = scales::percent)+
+  geom_vline(xintercept = 0.5)+ 
   labs(title = "Share of words with positive and negative sentiment",
-       subtitle = "by character (top 15 characters with the most sentences)", fill = "Sentiment",
-       x = "Character", y = "Ratio")+
+       subtitle = "Bing lexicon, top 15 characters with the most sentences", fill = "Sentiment",
+       y = NULL, x = "Percentage")+
   guides(fill = guide_legend(reverse = T))+
   theme_minimal()+
-  theme(legend.title.align = 0.5, legend.position = "right", legend.direction = "vertical")
+  theme( legend.position = "top")
 ```
+
+Of the top 15 characters with the most lines, `Remus Lupin` and `Minerva McGonagall` have the highest share of positive sentiment. That makes sense given their inspirational impact on the plot. Not surprisingly, `Draco Malfoy` and his father `Lucius Malfoy` are the most negative characters. `Tom Riddle`, the character later known as `Voldemort`, has a higher share of positive words than his later self. This is interesting because it shows a change in personality development as he grows up and becomes an evil villain. 
+
 
 # 3. TOPIC MODELLING
 
