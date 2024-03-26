@@ -1,7 +1,8 @@
 ---
-title: "final project"
-author: "Carlos and Eric"
-date: "2024-03-23"
+title: "Final Project: A text mining analysis of the Harry Potter films"
+subtitle: "Text Mining - UC3M"
+author: "Carlos San Juan, Eric Hausken-Brates"
+date: "2024-03-26"
 format: 
   html: 
     toc: true
