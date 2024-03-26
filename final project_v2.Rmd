@@ -105,6 +105,10 @@ Some of the questions we are going to address in the paper are:
 -   Who are the characters that have made the greatest impact on popular culture?
 -   Is the number of words related to the length of the films?
 -   What are the most distinctive words or characters in each film?
+-   How do the most frequently used words differ from the most common bigrams and trigrams? 
+-   Which films, scenes, and characters have the most positive and negative sentiment throughout the series? 
+-   Does the grouping size of dialogue chunks affect our results in sentiment analysis? 
+
 
 # 1. TF-IDF
 
