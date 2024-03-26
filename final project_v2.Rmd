@@ -58,7 +58,7 @@ Before we continue, we want to warn that this work is made by big fans of the sa
 
 ## Databases
 
-La base de datos que utilizaremos en este proyecto se ha recopilado de GitHub y está accesible directamente a través del siguiente enlace: [GitHub - HP Dataset](https://github.com/Kornflex28/hp-dataset/tree/main/datasets).
+The database we will use in this project has been compiled from GitHub and is directly accessible through the following link: [GitHub - HP Dataset](https://github.com/Kornflex28/hp-dataset/tree/main/datasets).
 
 ```{r}
 
