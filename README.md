@@ -3,6 +3,7 @@
 ### Collaborators:
 
 - @carlossanjuan26
+- @ericinthehaus
 
 ### Overview
 
